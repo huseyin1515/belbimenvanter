@@ -4,6 +4,7 @@ using BelbimEnv.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BelbimEnv.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250716080302_AddPortCountsToDetayServerTable2")]
+    partial class AddPortCountsToDetayServerTable2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,15 +25,21 @@ namespace BelbimEnv.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("BelbimEnv.Models.PortDetay", b =>
+            modelBuilder.Entity("BelbimEnv.Models.DetayServer", b =>
                 {
                     b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+                    b.Property<string>("BakirMAC")
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Adres")
+                    b.Property<int?>("BakirPortAdet")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("FCPortAdet")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FiberMAC")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LinkSpeed")
@@ -39,18 +48,24 @@ namespace BelbimEnv.Migrations
                     b.Property<string>("LinkStatus")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PortTipi")
-                        .IsRequired()
+                    b.Property<string>("NIC_ID")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("ServerId")
+                    b.Property<string>("PortID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int?>("SANPortAdet")
                         .HasColumnType("int");
+
+                    b.Property<int?>("VirtualPortAdet")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WWPN")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ServerId");
-
-                    b.ToTable("PortDetaylari");
+                    b.ToTable("DetayServers");
                 });
 
             modelBuilder.Entity("BelbimEnv.Models.Server", b =>
@@ -111,11 +126,11 @@ namespace BelbimEnv.Migrations
                     b.ToTable("Servers");
                 });
 
-            modelBuilder.Entity("BelbimEnv.Models.PortDetay", b =>
+            modelBuilder.Entity("BelbimEnv.Models.DetayServer", b =>
                 {
                     b.HasOne("BelbimEnv.Models.Server", "Server")
-                        .WithMany("PortDetaylari")
-                        .HasForeignKey("ServerId")
+                        .WithOne("DetayServer")
+                        .HasForeignKey("BelbimEnv.Models.DetayServer", "Id")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -124,7 +139,8 @@ namespace BelbimEnv.Migrations
 
             modelBuilder.Entity("BelbimEnv.Models.Server", b =>
                 {
-                    b.Navigation("PortDetaylari");
+                    b.Navigation("DetayServer")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

@@ -170,3 +170,4 @@ C:\Users\ASUS\source\repos\BelbimEnv\BelbimEnv\obj\Debug\net8.0\refint\BelbimEnv
 C:\Users\ASUS\source\repos\BelbimEnv\BelbimEnv\obj\Debug\net8.0\BelbimEnv.pdb
 C:\Users\ASUS\source\repos\BelbimEnv\BelbimEnv\obj\Debug\net8.0\BelbimEnv.genruntimeconfig.cache
 C:\Users\ASUS\source\repos\BelbimEnv\BelbimEnv\obj\Debug\net8.0\ref\BelbimEnv.dll
+C:\Users\ASUS\source\repos\BelbimEnv\BelbimEnv\obj\Debug\net8.0\BelbimEnv.sourcelink.json

@@ -1,5 +1,5 @@
-﻿// Konum: Models/Server.cs
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
 
 namespace BelbimEnv.Models
 {
@@ -33,5 +33,7 @@ namespace BelbimEnv.Models
         public string? IsttelkomEtiketId { get; set; }
         public DateTime DateAdded { get; set; }
         public DateTime LastUpdated { get; set; }
+
+        public virtual ICollection<PortDetay> PortDetaylari { get; set; } = new List<PortDetay>();
     }
 }

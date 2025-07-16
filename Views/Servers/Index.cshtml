@@ -1,142 +1,105 @@
-﻿<!-- Konum: Views/Servers/Index.cshtml -->
-@model IEnumerable<BelbimEnv.Models.Server>
+﻿@model IEnumerable<BelbimEnv.Models.Server>
+
 @{
-    ViewData["Title"] = "Sunucu Envanter Paneli";
+    ViewData["Title"] = "Sunucu Paneli";
 }
 
-<style>
-    .table-hover tbody tr.table-primary,
-    .table-hover tbody tr.table-primary:hover {
-        background-color: #cfe2ff !important;
-        font-weight: bold;
-    }
-</style>
-
-<!-- CSV YÜKLEME MODALI -->
+<!-- ========================================================== -->
+<!-- === EKSİK OLAN CSV YÜKLEME MODAL PENCERESİ BAŞLANGIÇ === -->
+<!-- ========================================================== -->
 <div class="modal fade" id="csvUploadModal" tabindex="-1" aria-labelledby="csvUploadModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form asp-action="ImportCsv" method="post" enctype="multipart/form-data">
+            <form asp-controller="Servers" asp-action="ImportCsv" method="post" enctype="multipart/form-data">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="csvUploadModalLabel"><i class="fas fa-file-csv me-2"></i>CSV ile Veri Yükle</h5>
+                    <h5 class="modal-title" id="csvUploadModalLabel"><i class="fas fa-file-csv me-2"></i>Sunucu Verilerini CSV ile Yükle</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
+                    <p class="text-muted small">Sadece ana sunucu verilerini yükler. Port detayları için her sunucunun kendi yönetim sayfasını kullanın.</p>
                     <div class="mb-3">
-                        <label for="file" class="form-label fw-bold">CSV Dosyası Seç:</label>
+                        <label for="file" class="form-label">CSV Dosyası:</label>
                         <input type="file" name="file" class="form-control" required accept=".csv" />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Yükleme Seçeneği:</label>
-                        <div class="form-check"><input class="form-check-input" type="radio" name="importOption" id="optionAppend" value="append" checked><label class="form-check-label" for="optionAppend">Mevcut verilerin üzerine ekle</label></div>
-                        <div class="form-check text-danger"><input class="form-check-input" type="radio" name="importOption" id="optionReplace" value="replace"><label class="form-check-label" for="optionReplace"><strong>Tüm verileri sil</strong> ve bunları ekle</label></div>
+                        <label class="form-label">Yükleme Seçeneği:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="importOption" id="optionAppend" value="append" checked>
+                            <label class="form-check-label" for="optionAppend">Mevcut verilerin üzerine ekle</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="importOption" id="optionReplace" value="replace">
+                            <label class="form-check-label" for="optionReplace">Tüm verileri sil ve bunları ekle (Sıfırla)</label>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload me-1"></i> Yükle ve Kaydet</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload me-1"></i> Yükle</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-<!-- SAYFA BAŞLIĞI VE BUTONLAR -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2 class="h4 mb-0">@ViewData["Title"]</h2>
-    <div>
-        <button type="button" class="btn btn-outline-secondary me-2" data-bs-toggle="modal" data-bs-target="#csvUploadModal"><i class="fas fa-file-csv me-1"></i> Toplu Yükle (CSV)</button>
-        <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Yeni Kayıt Ekle</a>
-    </div>
-</div>
-
-<!-- ANA KART VE TABLO -->
+<!-- ========================================================== -->
+<!-- === EKSİK OLAN CSV YÜKLEME MODAL PENCERESİ BİTİŞ === -->
+<!-- ========================================================== -->
+<!-- ANA SAYFA KARTI -->
 <div class="card shadow-sm">
-    <div class="card-body">
-        <div class="mb-3">
-            <div class="row g-2">
-                <div class="col-md-2"><input type="text" id="idSearch" onkeyup="filterTable()" class="form-control form-control-sm" placeholder="ID Ara..."></div>
-                <div class="col-md-3"><input type="text" id="dnsSearch" onkeyup="filterTable()" class="form-control form-control-sm" placeholder="Host DNS Ara..."></div>
-                <div class="col-md-3"><input type="text" id="ipSearch" onkeyup="filterTable()" class="form-control form-control-sm" placeholder="IP Adresi Ara..."></div>
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 text-primary"><i class="fas fa-server me-2"></i>@ViewData["Title"]</h4>
+
+            <!-- === DEĞİŞTİRİLEN BUTON GRUBU BAŞLANGIÇ === -->
+            <div>
+                <!-- CSV MODALINI AÇACAK BUTON -->
+                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#csvUploadModal">
+                    <i class="fas fa-file-csv me-1"></i> CSV ile Yükle
+                </button>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Yeni Sunucu Ekle
+                </a>
             </div>
+            <!-- === DEĞİŞTİRİLEN BUTON GRUBU BİTİŞ === -->
         </div>
+    </div>
+    <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover table-bordered table-sm align-middle" id="serverTable">
-                <thead class="table-dark text-nowrap">
-                    <tr><th>ID</th><th>Host DNS</th><th>IP Adresi</th><th>Model</th><th>Seri No</th><th>vCenter</th><th>Cluster</th><th>Lokasyon</th><th>O/S</th><th>iLO/iDRAC</th><th>Kabin</th><th>Yön</th><th>U</th><th>Etiket ID</th><th>Eklenme</th><th>Güncellenme</th><th class="text-end">İşlemler</th></tr>
+            <table class="table table-hover table-bordered table-sm">
+                <thead class="table-dark">
+                    <tr><th>ID</th><th>Host DNS</th><th>IP Adresi</th><th>Model</th><th>Service Tag</th><th>Lokasyon</th><th class="text-end">İşlemler</th></tr>
                 </thead>
                 <tbody>
-                    @if (Model != null && Model.Any())
+                    @if (Model == null || !Model.Any())
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <p class="text-muted">Henüz hiç sunucu kaydı bulunmuyor.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
                     {
                         @foreach (var item in Model)
                         {
-                            <tr onclick="selectRow(this)">
+                            <tr>
                                 <td>@item.Id</td>
                                 <td>@item.HostDns</td>
                                 <td>@item.IpAdress</td>
                                 <td>@item.Model</td>
                                 <td>@item.ServiceTag</td>
-                                <td>@item.VcenterAdress</td>
-                                <td>@item.Cluster</td>
                                 <td>@item.Location</td>
-                                <td>@item.OS</td>
-                                <td>@item.IloIdracIp</td>
-                                <td>@item.Kabin</td>
-                                <td>@item.RearFront</td>
-                                <td>@item.KabinU</td>
-                                <td>@item.IsttelkomEtiketId</td>
-                                <td>@item.DateAdded.ToString("d MMM yyyy")</td>
-                                <td>@item.LastUpdated.ToString("d MMM yyyy")</td>
-                                <td class="text-end">
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-light" title="Düzenle"><i class="fas fa-pencil-alt text-primary"></i></a>
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-light" title="Detaylar"><i class="fas fa-info-circle text-info"></i></a>
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-light" title="Sil"><i class="fas fa-trash-alt text-danger"></i></a>
+                                <td class="text-end text-nowrap">
+                                    <a asp-controller="PortDetaylari" asp-action="Manage" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success" title="Port Detaylarını Yönet"><i class="fas fa-network-wired"></i></a>
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Detaylar"><i class="fas fa-info-circle"></i></a>
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pencil-alt"></i></a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></a>
                                 </td>
                             </tr>
                         }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="17" class="text-center py-4">
-                                <p class="text-muted mb-0">Gösterilecek kayıt bulunamadı.</p>
-                                <small>Başlamak için "Yeni Kayıt Ekle" veya "Toplu Yükle (CSV)" butonunu kullanın.</small>
-                            </td>
-                        </tr>
                     }
                 </tbody>
             </table>
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        // SATIR SEÇME VE VURGULAMA FONKSİYONU
-        function selectRow(row) {
-            document.querySelectorAll('#serverTable tbody tr').forEach(r => r.classList.remove('table-primary'));
-            row.classList.add('table-primary');
-        }
-
-        // CANLI FİLTRELEME FONKSİYONU (DÜZELTİLMİŞ HALİ)
-        function filterTable() {
-            const idFilter = document.getElementById("idSearch").value.toLowerCase();
-            const dnsFilter = document.getElementById("dnsSearch").value.toLowerCase();
-            const ipFilter = document.getElementById("ipSearch").value.toLowerCase();
-
-            document.querySelectorAll('#serverTable tbody tr').forEach(row => {
-                // Eğer satır veri satırı değilse (örn: "kayıt bulunamadı" mesajı ise) dokunma
-                if (row.cells.length < 17) return;
-
-                const id = row.cells[0].textContent.toLowerCase();
-                const dns = row.cells[1].textContent.toLowerCase();
-                const ip = row.cells[2].textContent.toLowerCase();
-
-                const isMatch = id.includes(idFilter) && dns.includes(dnsFilter) && ip.includes(ipFilter);
-
-                // Eğer eşleşiyorsa göster, eşleşmiyorsa gizle
-                row.style.display = isMatch ? "" : "none";
-            });
-        }
-    </script>
-}
