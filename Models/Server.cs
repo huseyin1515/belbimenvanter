@@ -34,6 +34,7 @@ namespace BelbimEnv.Models
         public DateTime DateAdded { get; set; }
         public DateTime LastUpdated { get; set; }
 
+        // Bire-Çok ilişki: Bir Server, birden çok PortDetay'ına sahip olabilir.
         public virtual ICollection<PortDetay> PortDetaylari { get; set; } = new List<PortDetay>();
     }
 }

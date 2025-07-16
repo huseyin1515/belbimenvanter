@@ -3,9 +3,8 @@
 @{
     ViewData["Title"] = "Port Yönetimi";
     var portTipleri = new[] {
-        new { Value = "Fiber", Text = "Fiber" },
-        new { Value = "Bakır", Text = "Bakır" },
-        new { Value = "SAN", Text = "SAN" },
+        new { Value = "Fiber", Text = "Fiber" }, new { Value = "Bakır", Text = "Bakır" },
+        new { Value = "SAN", Text = "SAN" }, new { Value = "FC", Text = "FC" },
         new { Value = "Virtual", Text = "Virtual" }
     };
 }
@@ -13,110 +12,104 @@
 <div class="card shadow-sm">
     <div class="card-header bg-light">
         <h4>@ViewData["Title"]</h4>
-        <p class="text-muted mb-0">"<strong>@Model.DeviceName</strong>" adlı sunucu için portları yönetin.</p>
     </div>
     <div class="card-body">
         <form asp-action="Manage" method="post">
-            @Html.AntiForgeryToken()
             <input type="hidden" asp-for="ServerId" />
+            @Html.AntiForgeryToken()
+
+            <!-- ========================================================== -->
+            <!-- === YENİ EKLENEN ANA SUNUCU BİLGİLERİ BÖLÜMÜ BAŞLANGIÇ === -->
+            <!-- ========================================================== -->
+            <h5><i class="fas fa-server text-primary me-2"></i>İşlem Yapılan Sunucu</h5>
+            <hr class="mt-1" />
+            <div class="row p-2 mb-3 bg-light border rounded">
+                <div class="col-md-4">
+                    <strong>Host DNS:</strong> @Model.DeviceName
+                </div>
+                <div class="col-md-4">
+                    <strong>Service Tag:</strong> @Model.ServiceTag
+                </div>
+                <div class="col-md-4">
+                    <strong>Model:</strong> @Model.Model
+                </div>
+                <div class="col-md-4">
+                    <strong>Lokasyon:</strong> @Model.Location
+                </div>
+            </div>
+            <!-- ========================================================== -->
+            <!-- === YENİ EKLENEN ANA SUNUCU BİLGİLERİ BÖLÜMÜ BİTİŞ === -->
+            <!-- ========================================================== -->
 
             <h5><i class="fas fa-list-ul me-2"></i>Mevcut & Eklenecek Portlar</h5>
-            <hr />
-            <div id="port-container">
+            <hr class="mt-1" />
+            <div id="port-container" class="mb-3">
                 @for (int i = 0; i < Model.Portlar.Count; i++)
                 {
-                    <div class="row align-items-end mb-3 p-3 border rounded port-row position-relative">
+                    <div class="row align-items-center mb-2 p-2 border rounded port-row">
                         <input type="hidden" name="Portlar.Index" value="@i" />
-                        <input type="hidden" name="Portlar[@i].Id" value="@Model.Portlar[i].Id" />
-                        <div class="col-md-3"><label class="form-label fw-bold">Port Tipi</label><input name="Portlar[@i].PortTipi" value="@Model.Portlar[i].PortTipi" class="form-control" readonly /></div>
-                        <div class="col-md-3"><label class="form-label fw-bold">Adres (MAC/WWPN)</label><input name="Portlar[@i].Adres" value="@Model.Portlar[i].Adres" class="form-control" /></div>
-                        <div class="col-md-2"><label class="form-label">Link Durumu</label><input name="Portlar[@i].LinkStatus" value="@Model.Portlar[i].LinkStatus" class="form-control" /></div>
-                        <div class="col-md-2"><label class="form-label">Link Hızı</label><input name="Portlar[@i].LinkSpeed" value="@Model.Portlar[i].LinkSpeed" class="form-control" /></div>
-                        <div class="col-md-auto ms-auto"><label> </label><button type="button" class="btn btn-sm btn-danger remove-port-btn d-block"><i class="fas fa-trash-alt"></i> Sil</button></div>
+                        <div class="col-md-2"><input name="Portlar[@i].PortTipi" value="@Model.Portlar[i].PortTipi" class="form-control form-control-sm" readonly /></div>
+                        <div class="col-md-3" style="display:@(Model.Portlar[i].PortTipi == "Fiber" || Model.Portlar[i].PortTipi == "FC" ? "block" : "none")"><input name="Portlar[@i].FiberMAC" value="@Model.Portlar[i].FiberMAC" class="form-control form-control-sm" placeholder="Fiber MAC" /></div>
+                        <div class="col-md-3" style="display:@(Model.Portlar[i].PortTipi == "Bakır" ? "block" : "none")"><input name="Portlar[@i].BakirMAC" value="@Model.Portlar[i].BakirMAC" class="form-control form-control-sm" placeholder="Bakır MAC" /></div>
+                        <div class="col-md-3" style="display:@(Model.Portlar[i].PortTipi == "SAN" ? "block" : "none")"><input name="Portlar[@i].WWPN" value="@Model.Portlar[i].WWPN" class="form-control form-control-sm" placeholder="WWPN" /></div>
+                        <div class="col-md-auto ms-auto"><button type="button" class="btn btn-sm btn-outline-danger remove-port-btn"><i class="fas fa-trash-alt"></i></button></div>
                     </div>
                 }
             </div>
 
             <h5 class="mt-4"><i class="fas fa-plus-circle me-2"></i>Yeni Port Ekle</h5>
-            <hr />
+            <hr class="mt-1" />
             <div class="row g-3 align-items-end p-3 border-dashed rounded">
-                <div class="col-md-3"><label class="form-label">Eklenecek Port Tipi</label><select id="new-port-type" class="form-select">@foreach (var tip in portTipleri) {
+                <div class="col-md-3"><label class="form-label">Eklenecek Port Tipi</label><select id="new-port-type" class="form-select">@foreach(var tip in portTipleri) {
                 <option value="@tip.Value">@tip.Text</option>
                                 }
 </select></div>
                 <div class="col-md-2"><label class="form-label">Adet</label><input type="number" id="new-port-count" class="form-control" value="1" min="1" /></div>
-                <div class="col-md-3"><button type="button" id="add-port-btn" class="btn btn-success"><i class="fas fa-plus"></i> Seçilen Tipten Ekle</button></div>
+                <div class="col-md-3"><button type="button" id="add-port-row-btn" class="btn btn-success"><i class="fas fa-plus"></i> Ekle</button></div>
             </div>
 
             <div class="form-group d-flex justify-content-end mt-4">
                 <a asp-controller="Servers" asp-action="Index" class="btn btn-outline-secondary me-2">İptal</a>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Tüm Değişiklikleri Kaydet</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Tüm Değişiklikleri Kaydet</button>
             </div>
         </form>
     </div>
 </div>
 
-@* === DÜZELTİLEN VE SAĞLAMLAŞTIRILAN SCRIPTS BÖLÜMÜ === *@
 @section Scripts {
     <script>
-        // Bu kodun, sayfanın tüm HTML elemanları yüklendikten sonra çalışmasını garanti eder.
         document.addEventListener("DOMContentLoaded", function() {
-            // jQuery'nin yüklü olup olmadığını kontrol edelim. Eğer bir sebepten yüklenmemişse
-            // bu kod hiç çalışmaz ve konsolda hata verir.
-            if (typeof jQuery == 'undefined') {
-                console.error("jQuery is not loaded. The dynamic form will not work.");
-                return;
-            }
+            let portIndex = document.querySelectorAll('#port-container .port-row').length;
 
-            // Index'i mevcut satır sayısından başlatıyoruz.
-            let portIndex = $('#port-container .port-row').length;
+            document.getElementById('add-port-row-btn').addEventListener('click', function() {
+                const type = document.getElementById('new-port-type').value;
+                const count = parseInt(document.getElementById('new-port-count').value) || 1;
 
-            $("#add-port-btn").on("click", function () {
-                const portType = $("#new-port-type").val();
-                const portCount = parseInt($("#new-port-count").val()) || 1;
+                for(let i = 0; i < count; i++) {
+                    const fiberDisplay = (type === 'Fiber' || type === 'FC') ? 'block' : 'none';
+                    const bakirDisplay = (type === 'Bakır') ? 'block' : 'none';
+                    const sanDisplay = (type === 'SAN') ? 'block' : 'none';
 
-                for (let i = 0; i < portCount; i++) {
-                    const isVirtual = portType === 'Virtual';
-
-                    const newRow = `
-                        <div class="row align-items-end mb-3 p-3 border rounded port-row position-relative">
+                    const newRowHtml = `
+                        <div class="row align-items-center mb-2 p-2 border rounded port-row">
                             <input type="hidden" name="Portlar.Index" value="${portIndex}" />
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold">Port Tipi</label>
-                                <input type="text" name="Portlar[${portIndex}].PortTipi" value="${portType}" class="form-control" readonly />
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label fw-bold">Adres (MAC/WWPN)</label>
-                                <input type="text" name="Portlar[${portIndex}].Adres" class="form-control" placeholder="${isVirtual ? 'Adres Gerekmez' : portType + ' için adres girin...'}" ${isVirtual ? 'readonly' : ''} />
-                            </div>
-                            <div class="col-md-2">
-                                <label class="form-label">Link Durumu</label>
-                                <input type="text" name="Portlar[${portIndex}].LinkStatus" class="form-control" />
-                            </div>
-                             <div class="col-md-2">
-                                <label class="form-label">Link Hızı</label>
-                                <input type="text" name="Portlar[${portIndex}].LinkSpeed" class="form-control" />
-                            </div>
-                            <div class="col-md-auto ms-auto">
-                                <label> </label>
-                                <button type="button" class="btn btn-sm btn-danger remove-port-btn d-block"><i class="fas fa-trash-alt"></i> Sil</button>
-                            </div>
+                            <div class="col-md-2"><input name="Portlar[${portIndex}].PortTipi" value="${type}" class="form-control form-control-sm" readonly /></div>
+                            <div class="col-md-3" style="display:${fiberDisplay}"><input name="Portlar[${portIndex}].FiberMAC" class="form-control form-control-sm" placeholder="Fiber MAC" /></div>
+                            <div class="col-md-3" style="display:${bakirDisplay}"><input name="Portlar[${portIndex}].BakirMAC" class="form-control form-control-sm" placeholder="Bakır MAC" /></div>
+                            <div class="col-md-3" style="display:${sanDisplay}"><input name="Portlar[${portIndex}].WWPN" class="form-control form-control-sm" placeholder="WWPN" /></div>
+                            <div class="col-md-auto ms-auto"><button type="button" class="btn btn-sm btn-outline-danger remove-port-btn"><i class="fas fa-trash-alt"></i></button></div>
                         </div>`;
-
-                    $("#port-container").append(newRow);
+                    document.getElementById('port-container').insertAdjacentHTML('beforeend', newRowHtml);
                     portIndex++;
                 }
             });
 
-            // "Sil" butonuna tıklandığında ilgili satırı DOM'dan kaldırır.
-            // Olayı, her zaman var olan bir üst elemana (.card-body) bağlıyoruz. Bu, dinamik olarak
-            // eklenen elemanların da olayları yakalamasını sağlar (event delegation).
-            $(".card-body").on("click", ".remove-port-btn", function () {
-                $(this).closest(".port-row").remove();
+            document.getElementById('port-container').addEventListener('click', function(e) {
+                const removeButton = e.target.closest('.remove-port-btn');
+                if (removeButton) {
+                    removeButton.closest('.port-row').remove();
+                }
             });
         });
     </script>
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
 }

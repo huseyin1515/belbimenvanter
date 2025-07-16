@@ -12,21 +12,31 @@ namespace BelbimEnv.Controllers
         private readonly ApplicationDbContext _context;
         public PortDetaylariController(ApplicationDbContext context) { _context = context; }
 
+        // GET: PortDetaylari/Manage/5
         public async Task<IActionResult> Manage(int? id)
         {
             if (id == null) return NotFound();
-            var server = await _context.Servers.Include(s => s.PortDetaylari).FirstOrDefaultAsync(s => s.Id == id);
+            var server = await _context.Servers
+                .Include(s => s.PortDetaylari)
+                .FirstOrDefaultAsync(s => s.Id == id);
+
             if (server == null) return NotFound();
 
+            // ViewModel'i oluştururken TÜM gerekli alanları dolduruyoruz.
             var viewModel = new PortDetayViewModel
             {
                 ServerId = server.Id,
                 DeviceName = server.HostDns,
+                ServiceTag = server.ServiceTag, // EKLENDİ
+                Model = server.Model,         // EKLENDİ
+                Location = server.Location,   // EKLENDİ
                 Portlar = server.PortDetaylari.ToList()
             };
+
             return View(viewModel);
         }
 
+        // POST metodu aynı kalabilir, çünkü o sadece portları kaydediyor.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Manage(PortDetayViewModel viewModel)
@@ -50,7 +60,7 @@ namespace BelbimEnv.Controllers
             }
 
             await _context.SaveChangesAsync();
-            return RedirectToAction("Index", "Servers");
+            return RedirectToAction("Details", "Servers", new { id = viewModel.ServerId });
         }
     }
 }

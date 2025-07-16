@@ -19,19 +19,14 @@
         <dl class="row">
             <dt class="col-sm-3">Sunucu ID</dt>
             <dd class="col-sm-9">@Model.Id</dd>
-
             <dt class="col-sm-3">Host DNS</dt>
             <dd class="col-sm-9">@Model.HostDns</dd>
-
             <dt class="col-sm-3">IP Adresi</dt>
             <dd class="col-sm-9">@Model.IpAdress</dd>
-
             <dt class="col-sm-3">Model</dt>
             <dd class="col-sm-9">@Model.Model</dd>
-
-            <dt class="col-sm-3">Service Tag / Seri Numarası</dt>
+            <dt class="col-sm-3">Service Tag</dt>
             <dd class="col-sm-9">@Model.ServiceTag</dd>
-
             <dt class="col-sm-3">İsttelkom Etiket ID</dt>
             <dd class="col-sm-9">@Model.IsttelkomEtiketId</dd>
         </dl>
@@ -42,10 +37,8 @@
         <dl class="row">
             <dt class="col-sm-3">İşletim Sistemi (O/S)</dt>
             <dd class="col-sm-9">@Model.OS</dd>
-
             <dt class="col-sm-3">vCenter Adresi</dt>
             <dd class="col-sm-9">@Model.VcenterAdress</dd>
-
             <dt class="col-sm-3">Cluster</dt>
             <dd class="col-sm-9">@Model.Cluster</dd>
         </dl>
@@ -56,16 +49,12 @@
         <dl class="row">
             <dt class="col-sm-3">Lokasyon</dt>
             <dd class="col-sm-9">@Model.Location</dd>
-
             <dt class="col-sm-3">Kabin</dt>
             <dd class="col-sm-9">@Model.Kabin</dd>
-
             <dt class="col-sm-3">Kabin U</dt>
             <dd class="col-sm-9">@Model.KabinU</dd>
-
             <dt class="col-sm-3">Yön (Rear/Front)</dt>
             <dd class="col-sm-9">@Model.RearFront</dd>
-
             <dt class="col-sm-3">iLO/iDRAC IP</dt>
             <dd class="col-sm-9">@Model.IloIdracIp</dd>
         </dl>
@@ -79,9 +68,12 @@
                 <thead class="table-light">
                     <tr>
                         <th>Port Tipi</th>
-                        <th>Adres (MAC/WWPN)</th>
+                        <th>Fiber MAC</th>
+                        <th>Bakır MAC</th>
+                        <th>WWPN</th>
                         <th>Link Durumu</th>
                         <th>Link Hızı</th>
+                        <!-- Diğer ortak PortDetay alanları buraya eklenebilir -->
                     </tr>
                 </thead>
                 <tbody>
@@ -89,7 +81,9 @@
                     {
                         <tr>
                             <td><span class="badge bg-info text-dark">@port.PortTipi</span></td>
-                            <td>@port.Adres</td>
+                            <td>@port.FiberMAC</td>
+                            <td>@port.BakirMAC</td>
+                            <td>@port.WWPN</td>
                             <td>@port.LinkStatus</td>
                             <td>@port.LinkSpeed</td>
                         </tr>
@@ -108,7 +102,6 @@
         <dl class="row">
             <dt class="col-sm-3">Eklenme Tarihi</dt>
             <dd class="col-sm-9">@Model.DateAdded.ToString("F")</dd>
-
             <dt class="col-sm-3">Son Güncelleme</dt>
             <dd class="col-sm-9">@Model.LastUpdated.ToString("F")</dd>
         </dl>
@@ -116,11 +109,7 @@
 
     <!-- Sayfa Altı Butonları -->
     <div class="card-footer text-end">
-        <a asp-controller="PortDetaylari" asp-action="Manage" asp-route-id="@Model.Id" class="btn btn-success">
-            <i class="fas fa-network-wired me-1"></i> Port Detaylarını Yönet
-        </a>
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
-            <i class="fas fa-edit me-1"></i> Ana Bilgileri Düzenle
-        </a>
+        <a asp-controller="PortDetaylari" asp-action="Manage" asp-route-id="@Model.Id" class="btn btn-success"><i class="fas fa-network-wired me-1"></i> Port Detaylarını Yönet</a>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-edit me-1"></i> Ana Bilgileri Düzenle</a>
     </div>
 </div>
