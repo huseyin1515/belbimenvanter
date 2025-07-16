@@ -1,0 +1,29 @@
+﻿<!-- Konum: Views/Servers/Edit.cshtml -->
+@model BelbimEnv.Models.Server
+@{
+	ViewData["Title"] = "Sunucu Düzenle";
+}
+<div class="card shadow-sm">
+	<div class="card-header bg-light"><h4 class="mb-0 text-primary"><i class="fas fa-pencil-alt me-2"></i>@ViewData["Title"]</h4></div><div class="card-body">
+		<form asp-action="Edit" method="post">
+			@Html.AntiForgeryToken()<input type="hidden" asp-for="Id" /><div asp-validation-summary="ModelOnly" class="alert alert-danger"></div><div class="row g-3">
+				<div class="col-md-4"><label asp-for="HostDns" class="form-label fw-bold"></label><input asp-for="HostDns" class="form-control" /><span asp-validation-for="HostDns" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="IpAdress" class="form-label fw-bold"></label><input asp-for="IpAdress" class="form-control" /><span asp-validation-for="IpAdress" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="Model" class="form-label fw-bold"></label><input asp-for="Model" class="form-control" /><span asp-validation-for="Model" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="ServiceTag" class="form-label fw-bold"></label><input asp-for="ServiceTag" class="form-control" /><span asp-validation-for="ServiceTag" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="VcenterAdress" class="form-label fw-bold"></label><input asp-for="VcenterAdress" class="form-control" /><span asp-validation-for="VcenterAdress" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="Cluster" class="form-label fw-bold"></label><input asp-for="Cluster" class="form-control" /><span asp-validation-for="Cluster" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="Location" class="form-label fw-bold"></label><input asp-for="Location" class="form-control" /><span asp-validation-for="Location" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="OS" class="form-label fw-bold"></label><input asp-for="OS" class="form-control" /><span asp-validation-for="OS" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="IloIdracIp" class="form-label fw-bold"></label><input asp-for="IloIdracIp" class="form-control" /><span asp-validation-for="IloIdracIp" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="Kabin" class="form-label fw-bold"></label><input asp-for="Kabin" class="form-control" /><span asp-validation-for="Kabin" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="RearFront" class="form-label fw-bold"></label><input asp-for="RearFront" class="form-control" /><span asp-validation-for="RearFront" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="KabinU" class="form-label fw-bold"></label><input asp-for="KabinU" class="form-control" /><span asp-validation-for="KabinU" class="text-danger small"></span></div>
+				<div class="col-md-4"><label asp-for="IsttelkomEtiketId" class="form-label fw-bold"></label><input asp-for="IsttelkomEtiketId" class="form-control" /><span asp-validation-for="IsttelkomEtiketId" class="text-danger small"></span></div>
+			</div><hr class="mt-4"><div class="form-group d-flex justify-content-end"><a asp-action="Index" class="btn btn-outline-secondary me-2"><i class="fas fa-times me-1"></i> İptal</a><button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Değişiklikleri Kaydet</button></div>
+		</form>
+	</div>
+</div>
+@section Scripts {
+	<partial name="_ValidationScriptsPartial" />
+}

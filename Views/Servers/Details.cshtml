@@ -1,0 +1,92 @@
+﻿<!-- Konum: Views/Servers/Details.cshtml -->
+@model BelbimEnv.Models.Server
+@{
+    ViewData["Title"] = "Sunucu Kayıt Detayı";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h4 mb-0">@ViewData["Title"]</h2>
+    <div>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-pencil-alt me-1"></i> Düzenle</a>
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i> Listeye Geri Dön</a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Sol Sütun: Ana Bilgiler -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="fas fa-server me-2 text-primary"></i>@Model.HostDns</h5>
+                <span class="badge bg-light text-dark">ID: @Model.Id</span>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-4">IP Adresi</dt>
+                    <dd class="col-sm-8">@Model.IpAdress</dd>
+
+                    <dt class="col-sm-4">Seri Numarası / Service Tag</dt>
+                    <dd class="col-sm-8"><code>@Model.ServiceTag</code></dd>
+
+                    <dt class="col-sm-4">Model</dt>
+                    <dd class="col-sm-8">@Model.Model</dd>
+
+                    <dt class="col-sm-4">İşletim Sistemi (O/S)</dt>
+                    <dd class="col-sm-8">@Model.OS</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sağ Sütun: Fiziksel ve Sanal Bilgiler -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-map-marker-alt me-2 text-success"></i>Fiziksel Konum</h6></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Lokasyon</dt>
+                    <dd class="col-sm-7">@Model.Location</dd>
+                    <dt class="col-sm-5">Kabin</dt>
+                    <dd class="col-sm-7">@Model.Kabin</dd>
+                    <dt class="col-sm-5">Kabin U</dt>
+                    <dd class="col-sm-7">@Model.KabinU</dd>
+                    <dt class="col-sm-5">Yön</dt>
+                    <dd class="col-sm-7">@Model.RearFront</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-cloud me-2 text-info"></i>Sanal Ortam</h6></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">vCenter</dt>
+                    <dd class="col-sm-7">@Model.VcenterAdress</dd>
+                    <dt class="col-sm-5">Cluster</dt>
+                    <dd class="col-sm-7">@Model.Cluster</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-3">
+    <div class="col-12">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0"><i class="fas fa-tags me-2 text-secondary"></i>Etiket ve Yönetim</h6></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-3">iLO / iDRAC IP</dt>
+                    <dd class="col-sm-9">@Model.IloIdracIp</dd>
+                    <dt class="col-sm-3">İsttelkom Etiket ID</dt>
+                    <dd class="col-sm-9">@Model.IsttelkomEtiketId</dd>
+                    <hr class="my-2" />
+                    <dt class="col-sm-3">Eklenme Tarihi</dt>
+                    <dd class="col-sm-9">@Model.DateAdded.ToString("F")</dd>
+                    <dt class="col-sm-3">Son Güncelleme</dt>
+                    <dd class="col-sm-9">@Model.LastUpdated.ToString("F")</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
