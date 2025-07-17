@@ -1,114 +1,223 @@
 ﻿@model BelbimEnv.Models.PortDetayViewModel
+@using BelbimEnv.Models
 
 @{
-    ViewData["Title"] = "Port Yönetimi";
-    var portTipleri = new[] {
-        new { Value = "Fiber", Text = "Fiber" }, new { Value = "Bakır", Text = "Bakır" },
-        new { Value = "SAN", Text = "SAN" }, new { Value = "FC", Text = "FC" },
-        new { Value = "Virtual", Text = "Virtual" }
-    };
+    ViewData["Title"] = $"{@Model.HostDns} - Port Yönetimi";
 }
 
-<div class="card shadow-sm">
-    <div class="card-header bg-light">
-        <h4>@ViewData["Title"]</h4>
+<!-- Başarı/Hata Mesajları -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<!-- Sayfa Başlığı ve Yeni Port Ekle Butonu -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>@ViewData["Title"]</h3>
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPortModal">
+        <i class="fas fa-plus me-1"></i> Yeni Port Ekle
+    </button>
+</div>
+
+<!-- ========================================================== -->
+<!-- === GÜNCELLENMİŞ "MEVCUT PORTLAR" KARTI === -->
+<!-- ========================================================== -->
+<div class="card shadow-sm">
     <div class="card-body">
-        <form asp-action="Manage" method="post">
-            <input type="hidden" asp-for="ServerId" />
-            @Html.AntiForgeryToken()
+        <h5 class="card-title">Mevcut Portlar (@Model.Portlar.Count adet)</h5>
 
-            <!-- ========================================================== -->
-            <!-- === YENİ EKLENEN ANA SUNUCU BİLGİLERİ BÖLÜMÜ BAŞLANGIÇ === -->
-            <!-- ========================================================== -->
-            <h5><i class="fas fa-server text-primary me-2"></i>İşlem Yapılan Sunucu</h5>
-            <hr class="mt-1" />
-            <div class="row p-2 mb-3 bg-light border rounded">
-                <div class="col-md-4">
-                    <strong>Host DNS:</strong> @Model.DeviceName
-                </div>
-                <div class="col-md-4">
-                    <strong>Service Tag:</strong> @Model.ServiceTag
-                </div>
-                <div class="col-md-4">
-                    <strong>Model:</strong> @Model.Model
-                </div>
-                <div class="col-md-4">
-                    <strong>Lokasyon:</strong> @Model.Location
-                </div>
+        <!-- YENİ EKLENEN BÖLÜM: Eğer hiç port yoksa, sunucu bilgilerini göster -->
+        @if (!Model.Portlar.Any())
+        {
+            <div class="p-4 my-3 bg-light rounded border">
+                <p class="text-muted mb-4">Bu sunucu için henüz port detayı girilmemiş. Aşağıda sunucunun temel bilgileri yer almaktadır.</p>
+                <dl class="row">
+                    <dt class="col-sm-3">Model:</dt>
+                    <dd class="col-sm-9">@Model.Model</dd>
+
+                    <dt class="col-sm-3">Service Tag:</dt>
+                    <dd class="col-sm-9">@Model.ServiceTag</dd>
+
+                    <dt class="col-sm-3">Lokasyon:</dt>
+                    <dd class="col-sm-9">@Model.Location</dd>
+                </dl>
             </div>
-            <!-- ========================================================== -->
-            <!-- === YENİ EKLENEN ANA SUNUCU BİLGİLERİ BÖLÜMÜ BİTİŞ === -->
-            <!-- ========================================================== -->
+        }
+        else
+        {
+            <!-- Eğer port varsa, normal tabloyu göster -->
+            <div class="table-responsive">
+                <table class="table table-striped table-bordered table-sm mt-3">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Port Tipi</th>
+                            <th>MAC / WWPN</th>
+                            <th>Link Durumu</th>
+                            <th>Switch Adı</th>
+                            <th class="text-center">İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var port in Model.Portlar)
+                        {
+                            <tr>
+                                <td><span class="badge bg-secondary">@port.PortTipi</span></td>
+                                <td>
+                                    @if (port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC)
+                                    {
+                                        <strong>Fiber MAC:</strong> 
+                                        @port.FiberMAC
+                                    }
+                                    else if (port.PortTipi == PortTipiEnum.Bakir)
+                                    {
+                                        <strong>Bakır MAC:</strong> 
+                                        @port.BakirMAC
+                                    }
+                                    else if (port.PortTipi == PortTipiEnum.SAN)
+                                    {
+                                        <strong>WWPN:</strong> 
+                                        @port.Wwpn
+                                    }
+                                </td>
+                                <td>@port.LinkStatus</td>
+                                <td>@port.SwName</td>
+                                <td class="text-center">
+                                    <a asp-controller="PortDetaylari" asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
+                                    <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
 
-            <h5><i class="fas fa-list-ul me-2"></i>Mevcut & Eklenecek Portlar</h5>
-            <hr class="mt-1" />
-            <div id="port-container" class="mb-3">
-                @for (int i = 0; i < Model.Portlar.Count; i++)
-                {
-                    <div class="row align-items-center mb-2 p-2 border rounded port-row">
-                        <input type="hidden" name="Portlar.Index" value="@i" />
-                        <div class="col-md-2"><input name="Portlar[@i].PortTipi" value="@Model.Portlar[i].PortTipi" class="form-control form-control-sm" readonly /></div>
-                        <div class="col-md-3" style="display:@(Model.Portlar[i].PortTipi == "Fiber" || Model.Portlar[i].PortTipi == "FC" ? "block" : "none")"><input name="Portlar[@i].FiberMAC" value="@Model.Portlar[i].FiberMAC" class="form-control form-control-sm" placeholder="Fiber MAC" /></div>
-                        <div class="col-md-3" style="display:@(Model.Portlar[i].PortTipi == "Bakır" ? "block" : "none")"><input name="Portlar[@i].BakirMAC" value="@Model.Portlar[i].BakirMAC" class="form-control form-control-sm" placeholder="Bakır MAC" /></div>
-                        <div class="col-md-3" style="display:@(Model.Portlar[i].PortTipi == "SAN" ? "block" : "none")"><input name="Portlar[@i].WWPN" value="@Model.Portlar[i].WWPN" class="form-control form-control-sm" placeholder="WWPN" /></div>
-                        <div class="col-md-auto ms-auto"><button type="button" class="btn btn-sm btn-outline-danger remove-port-btn"><i class="fas fa-trash-alt"></i></button></div>
+
+<!-- YENİ PORT EKLEME MODALI (Bu bölümde değişiklik yok) -->
+<div class="modal fade" id="addPortModal" tabindex="-1" aria-labelledby="addPortModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form asp-controller="PortDetaylari" asp-action="Create" method="post" id="addPortForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="addPortModalLabel">Yeni Port Ekleme Sihirbazı</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" asp-for="YeniPortFormu.ServerId" />
+
+                    <!-- Adım 1 -->
+                    <div id="step1">
+                        <h6>Adım 1: Ortak Port Bilgileri</h6><hr />
+                        <div class="row g-3">
+                            <div class="col-md-6"><label asp-for="YeniPortFormu.LinkStatus" class="form-label"></label><input asp-for="YeniPortFormu.LinkStatus" class="form-control" /></div>
+                            <div class="col-md-6"><label asp-for="YeniPortFormu.LinkSpeed" class="form-label"></label><input asp-for="YeniPortFormu.LinkSpeed" class="form-control" /></div>
+                            <div class="col-md-6"><label asp-for="YeniPortFormu.SwName" class="form-label"></label><input asp-for="YeniPortFormu.SwName" class="form-control" /></div>
+                            <div class="col-md-6"><label asp-for="YeniPortFormu.SwPort" class="form-label"></label><input asp-for="YeniPortFormu.SwPort" class="form-control" /></div>
+                        </div>
                     </div>
-                }
-            </div>
 
-            <h5 class="mt-4"><i class="fas fa-plus-circle me-2"></i>Yeni Port Ekle</h5>
-            <hr class="mt-1" />
-            <div class="row g-3 align-items-end p-3 border-dashed rounded">
-                <div class="col-md-3"><label class="form-label">Eklenecek Port Tipi</label><select id="new-port-type" class="form-select">@foreach(var tip in portTipleri) {
-                <option value="@tip.Value">@tip.Text</option>
-                                }
-</select></div>
-                <div class="col-md-2"><label class="form-label">Adet</label><input type="number" id="new-port-count" class="form-control" value="1" min="1" /></div>
-                <div class="col-md-3"><button type="button" id="add-port-row-btn" class="btn btn-success"><i class="fas fa-plus"></i> Ekle</button></div>
-            </div>
-
-            <div class="form-group d-flex justify-content-end mt-4">
-                <a asp-controller="Servers" asp-action="Index" class="btn btn-outline-secondary me-2">İptal</a>
-                <button type="submit" class="btn btn-primary"><i class="fas fa-save me-1"></i> Tüm Değişiklikleri Kaydet</button>
-            </div>
-        </form>
+                    <!-- Adım 2 -->
+                    <div id="step2" style="display:none;">
+                        <h6>Adım 2: Port Tipi ve Özel Bilgiler</h6><hr />
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-12"><label asp-for="YeniPortFormu.PortTipi" class="form-label fw-bold"></label><select id="portTipiSecimi" asp-for="YeniPortFormu.PortTipi" class="form-select" asp-items="Html.GetEnumSelectList<PortTipiEnum>()"><option value="">Lütfen bir port tipi seçin...</option></select></div>
+                            <div class="col-md-6 dynamic-field" id="fiberAlani" style="display:none;"><label asp-for="YeniPortFormu.FiberMAC" class="form-label"></label><input asp-for="YeniPortFormu.FiberMAC" class="form-control" /></div>
+                            <div class="col-md-6 dynamic-field" id="fcUcPortAlani" style="display:none;"><label asp-for="YeniPortFormu.FcUcPortSayisi" class="form-label"></label><input asp-for="YeniPortFormu.FcUcPortSayisi" class="form-control" /></div>
+                            <div class="col-md-6 dynamic-field" id="bakirAlani" style="display:none;"><label asp-for="YeniPortFormu.BakirMAC" class="form-label"></label><input asp-for="YeniPortFormu.BakirMAC" class="form-control" /></div>
+                            <div class="col-md-6 dynamic-field" id="bakirUplinkAlani" style="display:none;"><label asp-for="YeniPortFormu.BakirUplinkPort" class="form-label"></label><input asp-for="YeniPortFormu.BakirUplinkPort" class="form-control" /></div>
+                            <div class="col-md-6 dynamic-field" id="sanAlani" style="display:none;"><label asp-for="YeniPortFormu.Wwpn" class="form-label"></label><input asp-for="YeniPortFormu.Wwpn" class="form-control" /></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="button" class="btn btn-secondary" id="geriBtn" style="display:none;">Geri</button>
+                    <button type="button" class="btn btn-info" id="ileriBtn">İleri »</button>
+                    <button type="submit" class="btn btn-success" id="kaydetBtn" style="display:none;"><i class="fas fa-save me-1"></i>Kaydet</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            let portIndex = document.querySelectorAll('#port-container .port-row').length;
 
-            document.getElementById('add-port-row-btn').addEventListener('click', function() {
-                const type = document.getElementById('new-port-type').value;
-                const count = parseInt(document.getElementById('new-port-count').value) || 1;
+            // Modal ve adımları seçme
+            const addPortModal = document.getElementById('addPortModal');
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+            const ileriBtn = document.getElementById('ileriBtn');
+            const geriBtn = document.getElementById('geriBtn');
+            const kaydetBtn = document.getElementById('kaydetBtn');
+            const portTipiDropdown = document.getElementById('portTipiSecimi');
+            const addPortForm = document.getElementById('addPortForm');
 
-                for(let i = 0; i < count; i++) {
-                    const fiberDisplay = (type === 'Fiber' || type === 'FC') ? 'block' : 'none';
-                    const bakirDisplay = (type === 'Bakır') ? 'block' : 'none';
-                    const sanDisplay = (type === 'SAN') ? 'block' : 'none';
+            // Dinamik alanları seçme
+            const dynamicFields = document.querySelectorAll('#step2 .dynamic-field');
+            const fiberAlani = document.getElementById('fiberAlani');
+            const fcUcPortAlani = document.getElementById('fcUcPortAlani');
+            const bakirAlani = document.getElementById('bakirAlani');
+            const bakirUplinkAlani = document.getElementById('bakirUplinkAlani');
+            const sanAlani = document.getElementById('sanAlani');
 
-                    const newRowHtml = `
-                        <div class="row align-items-center mb-2 p-2 border rounded port-row">
-                            <input type="hidden" name="Portlar.Index" value="${portIndex}" />
-                            <div class="col-md-2"><input name="Portlar[${portIndex}].PortTipi" value="${type}" class="form-control form-control-sm" readonly /></div>
-                            <div class="col-md-3" style="display:${fiberDisplay}"><input name="Portlar[${portIndex}].FiberMAC" class="form-control form-control-sm" placeholder="Fiber MAC" /></div>
-                            <div class="col-md-3" style="display:${bakirDisplay}"><input name="Portlar[${portIndex}].BakirMAC" class="form-control form-control-sm" placeholder="Bakır MAC" /></div>
-                            <div class="col-md-3" style="display:${sanDisplay}"><input name="Portlar[${portIndex}].WWPN" class="form-control form-control-sm" placeholder="WWPN" /></div>
-                            <div class="col-md-auto ms-auto"><button type="button" class="btn btn-sm btn-outline-danger remove-port-btn"><i class="fas fa-trash-alt"></i></button></div>
-                        </div>`;
-                    document.getElementById('port-container').insertAdjacentHTML('beforeend', newRowHtml);
-                    portIndex++;
-                }
+            // İleri ve Geri butonları için olay dinleyicileri
+            ileriBtn.addEventListener('click', function () {
+                step1.style.display = 'none';
+                ileriBtn.style.display = 'none';
+                step2.style.display = 'block';
+                geriBtn.style.display = 'inline-block';
+                kaydetBtn.style.display = 'inline-block';
             });
 
-            document.getElementById('port-container').addEventListener('click', function(e) {
-                const removeButton = e.target.closest('.remove-port-btn');
-                if (removeButton) {
-                    removeButton.closest('.port-row').remove();
+            geriBtn.addEventListener('click', function () {
+                step2.style.display = 'none';
+                geriBtn.style.display = 'none';
+                kaydetBtn.style.display = 'none';
+                step1.style.display = 'block';
+                ileriBtn.style.display = 'inline-block';
+            });
+
+            // Dropdown değiştiğinde çalışacak fonksiyon
+            function updateDynamicFields() {
+                const secilenTip = portTipiDropdown.value;
+                dynamicFields.forEach(field => field.style.display = 'none');
+
+                if (secilenTip === '@((int)PortTipiEnum.FC)' || secilenTip === '@((int)PortTipiEnum.VirtualFC)') {
+                    fiberAlani.style.display = 'block';
+                    fcUcPortAlani.style.display = 'block';
+                } else if (secilenTip === '@((int)PortTipiEnum.Bakir)') {
+                    bakirAlani.style.display = 'block';
+                    bakirUplinkAlani.style.display = 'block';
+                } else if (secilenTip === '@((int)PortTipiEnum.SAN)') {
+                    sanAlani.style.display = 'block';
                 }
+            }
+            portTipiDropdown.addEventListener('change', updateDynamicFields);
+
+            // Modal kapandığında formu sıfırlama
+            addPortModal.addEventListener('hidden.bs.modal', function () {
+                addPortForm.reset();
+                if (geriBtn.style.display !== 'none') {
+                    geriBtn.click();
+                }
+                updateDynamicFields();
+
             });
         });
     </script>

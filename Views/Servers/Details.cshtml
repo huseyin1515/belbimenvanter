@@ -1,4 +1,5 @@
 ﻿@model BelbimEnv.Models.Server
+@using BelbimEnv.Models
 
 @{
     ViewData["Title"] = "Sunucu Detayı";
@@ -8,7 +9,7 @@
     <div class="card-header bg-light">
         <div class="d-flex justify-content-between align-items-center">
             <h4 class="mb-0 text-dark"><i class="fas fa-server me-2"></i>@Model.HostDns - Detayları</h4>
-            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Listeye Geri Dön</a>
+            <a asp-action="Index" asp-controller="Servers" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Listeye Geri Dön</a>
         </div>
     </div>
     <div class="card-body">
@@ -59,37 +60,57 @@
             <dd class="col-sm-9">@Model.IloIdracIp</dd>
         </dl>
 
-        <!-- 4. KATEGORİ: AĞ VE PORT DETAYLARI -->
+        <!-- 4. KATEGORİ: AĞ VE PORT DETAYLARI (GÜNCELLENDİ) -->
         <h5 class="mt-4"><i class="fas fa-network-wired text-primary me-2"></i>Ağ ve Port Detayları</h5>
         <hr class="mt-1" />
         @if (Model.PortDetaylari != null && Model.PortDetaylari.Any())
         {
-            <table class="table table-sm table-striped table-bordered">
-                <thead class="table-light">
-                    <tr>
-                        <th>Port Tipi</th>
-                        <th>Fiber MAC</th>
-                        <th>Bakır MAC</th>
-                        <th>WWPN</th>
-                        <th>Link Durumu</th>
-                        <th>Link Hızı</th>
-                        <!-- Diğer ortak PortDetay alanları buraya eklenebilir -->
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var port in Model.PortDetaylari)
-                    {
+            <div class="table-responsive">
+                <table class="table table-sm table-striped table-bordered">
+                    <thead class="table-light">
                         <tr>
-                            <td><span class="badge bg-info text-dark">@port.PortTipi</span></td>
-                            <td>@port.FiberMAC</td>
-                            <td>@port.BakirMAC</td>
-                            <td>@port.WWPN</td>
-                            <td>@port.LinkStatus</td>
-                            <td>@port.LinkSpeed</td>
+                            <th>Port Tipi</th>
+                            <th>MAC / WWPN</th>
+                            <th>Açıklama (Otomatik)</th>
+                            <th>Switch Adı</th>
+                            <th class="text-center" style="width: 100px;">İşlemler</th>
                         </tr>
-                    }
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        @foreach (var port in Model.PortDetaylari.OrderBy(p => p.Id))
+                        {
+                            <tr>
+                                <td><span class="badge bg-info text-dark">@port.PortTipi</span></td>
+                                <td>
+                                    @if (port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC)
+                                    {
+                                        <strong>Fiber MAC:</strong> 
+                                        @port.FiberMAC
+                                    }
+                                    else if (port.PortTipi == PortTipiEnum.Bakir)
+                                    {
+                                        <strong>Bakır MAC:</strong> 
+                                        @port.BakirMAC
+                                    }
+                                    else if (port.PortTipi == PortTipiEnum.SAN)
+                                    {
+                                        <strong>WWPN:</strong> 
+                                        @port.Wwpn
+                                    }
+                                </td>
+                                <td>@port.Aciklama</td>
+                                <td>@port.SwName</td>
+                                <td class="text-center">
+                                    <a asp-controller="PortDetaylari" asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
+                                    <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
         }
         else
         {
@@ -109,7 +130,7 @@
 
     <!-- Sayfa Altı Butonları -->
     <div class="card-footer text-end">
-        <a asp-controller="PortDetaylari" asp-action="Manage" asp-route-id="@Model.Id" class="btn btn-success"><i class="fas fa-network-wired me-1"></i> Port Detaylarını Yönet</a>
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-edit me-1"></i> Ana Bilgileri Düzenle</a>
+        <a asp-controller="PortDetaylari" asp-action="Manage" asp-route-id="@Model.Id" class="btn btn-success"><i class="fas fa-cogs me-1"></i> Port Yönetim Sayfası</a>
+        <a asp-action="Edit" asp-controller="Servers" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-server me-1"></i> Ana Sunucu Bilgilerini Düzenle</a>
     </div>
 </div>

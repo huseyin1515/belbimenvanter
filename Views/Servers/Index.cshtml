@@ -4,9 +4,7 @@
     ViewData["Title"] = "Sunucu Paneli";
 }
 
-<!-- ========================================================== -->
-<!-- === EKSİK OLAN CSV YÜKLEME MODAL PENCERESİ BAŞLANGIÇ === -->
-<!-- ========================================================== -->
+<!-- CSV YÜKLEME MODAL PENCERESİ (Mevcut kodunuzdaki gibi kalıyor) -->
 <div class="modal fade" id="csvUploadModal" tabindex="-1" aria-labelledby="csvUploadModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -41,35 +39,39 @@
         </div>
     </div>
 </div>
-<!-- ========================================================== -->
-<!-- === EKSİK OLAN CSV YÜKLEME MODAL PENCERESİ BİTİŞ === -->
-<!-- ========================================================== -->
+
+<!-- ============================================= -->
+<!-- === BAŞLIK VE BUTONLAR BÖLÜMÜ (GÜNCELLENDİ) === -->
+<!-- ============================================= -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="text-primary"><i class="fas fa-server me-2"></i>@ViewData["Title"]</h3>
+    <div>
+        <!-- ARAMA KUTUSU BURAYA EKLENDİ -->
+        <div class="input-group d-inline-flex" style="width: 350px;">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" id="serverSearchInput" class="form-control" placeholder="Sunucu bilgilerinde ara...">
+        </div>
+        <!-- Mevcut Butonlar -->
+        <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#csvUploadModal">
+            <i class="fas fa-file-csv me-1"></i> CSV ile Yükle
+        </button>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i> Yeni Sunucu Ekle
+        </a>
+    </div>
+</div>
+
+
 <!-- ANA SAYFA KARTI -->
 <div class="card shadow-sm">
-    <div class="card-header bg-light">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-0 text-primary"><i class="fas fa-server me-2"></i>@ViewData["Title"]</h4>
-
-            <!-- === DEĞİŞTİRİLEN BUTON GRUBU BAŞLANGIÇ === -->
-            <div>
-                <!-- CSV MODALINI AÇACAK BUTON -->
-                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#csvUploadModal">
-                    <i class="fas fa-file-csv me-1"></i> CSV ile Yükle
-                </button>
-                <a asp-action="Create" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i> Yeni Sunucu Ekle
-                </a>
-            </div>
-            <!-- === DEĞİŞTİRİLEN BUTON GRUBU BİTİŞ === -->
-        </div>
-    </div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover table-bordered table-sm">
                 <thead class="table-dark">
                     <tr><th>ID</th><th>Host DNS</th><th>IP Adresi</th><th>Model</th><th>Service Tag</th><th>Lokasyon</th><th class="text-end">İşlemler</th></tr>
                 </thead>
-                <tbody>
+                <!-- Arama için tbody'ye ID eklendi -->
+                <tbody id="serverTableBody">
                     @if (Model == null || !Model.Any())
                     {
                         <tr>
@@ -100,6 +102,41 @@
                     }
                 </tbody>
             </table>
+            <!-- Arama sonucu bulunamadığında gösterilecek mesaj -->
+            <p id="serverNoResultsMessage" class="text-center text-muted" style="display: none;">Arama kriterlerinize uygun sunucu bulunamadı.</p>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const searchInput = document.getElementById('serverSearchInput');
+            const tableBody = document.getElementById('serverTableBody');
+            const rows = tableBody.getElementsByTagName('tr');
+            const noResultsMessage = document.getElementById('serverNoResultsMessage');
+
+            searchInput.addEventListener('keyup', function() {
+                const filterText = searchInput.value.toLowerCase();
+                let visibleRowCount = 0;
+
+                for (let i = 0; i < rows.length; i++) {
+                    const row = rows[i];
+
+                    // Tüm satırın metin içeriğini alıp küçük harfe çeviriyoruz
+                    const rowText = row.textContent.toLowerCase();
+
+                    if (rowText.includes(filterText))
+                    {
+                        row.style.display = "";
+                        visibleRowCount++;
+                    } else {
+                        row.style.display = "none";
+                    }
+                }
+
+                noResultsMessage.style.display = (visibleRowCount === 0) ? "block" : "none";
+            });
+        });
+    </script>
+}

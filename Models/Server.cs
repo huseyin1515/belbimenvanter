@@ -1,5 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace BelbimEnv.Models
 {
@@ -33,8 +34,6 @@ namespace BelbimEnv.Models
         public string? IsttelkomEtiketId { get; set; }
         public DateTime DateAdded { get; set; }
         public DateTime LastUpdated { get; set; }
-
-        // Bire-Çok ilişki: Bir Server, birden çok PortDetay'ına sahip olabilir.
         public virtual ICollection<PortDetay> PortDetaylari { get; set; } = new List<PortDetay>();
     }
 }

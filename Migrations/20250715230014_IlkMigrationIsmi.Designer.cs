@@ -4,6 +4,7 @@ using BelbimEnv.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BelbimEnv.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250715230014_IlkMigrationIsmi")]
+    partial class IlkMigrationIsmi
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,17 +33,8 @@ namespace BelbimEnv.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Aciklama")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("BakirMAC")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("BakirUplinkPort")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("FcUcPortSayisi")
-                        .HasColumnType("int");
 
                     b.Property<string>("FiberMAC")
                         .HasColumnType("nvarchar(max)");
@@ -51,31 +45,26 @@ namespace BelbimEnv.Migrations
                     b.Property<string>("LinkStatus")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("NicId")
+                    b.Property<string>("NIC_ID")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("PortId")
+                    b.Property<string>("PortID")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("PortTipi")
-                        .HasColumnType("int");
+                    b.Property<string>("PortTipi")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SW_NAME")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("SW_PORT")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ServerId")
                         .HasColumnType("int");
 
-                    b.Property<string>("SwName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SwPort")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SwdeUcMi")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("UcPort")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Wwpn")
+                    b.Property<string>("WWPN")
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
