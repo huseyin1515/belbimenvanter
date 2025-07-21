@@ -71,7 +71,8 @@
                         <tr>
                             <th>Port Tipi</th>
                             <th>MAC / WWPN</th>
-                            <th>Açıklama (Otomatik)</th>
+                            <th>Açıklama</th>
+                            <th>Link Durumu</th>
                             <th>Switch Adı</th>
                             <th class="text-center" style="width: 100px;">İşlemler</th>
                         </tr>
@@ -99,12 +100,24 @@
                                     }
                                 </td>
                                 <td>@port.Aciklama</td>
+                                <td>
+                                    @if (port.LinkStatus?.ToLower() == "up")
+                                    {
+                                        <span class="badge bg-success">Up</span>
+                                    }
+                                    else if (port.LinkStatus?.ToLower() == "down")
+                                    {
+                                        <span class="badge bg-danger">Down</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">@port.LinkStatus</span>
+                                    }
+                                </td>
                                 <td>@port.SwName</td>
                                 <td class="text-center">
                                     <a asp-controller="PortDetaylari" asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
-                                    <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button>
-                                    </form>
+                                    <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');"><button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button></form>
                                 </td>
                             </tr>
                         }

@@ -75,14 +75,32 @@
             const portCountInput = document.getElementById('portCount');
             const saveButtonContainer = document.getElementById('save-button-container');
 
-            generateBtn.addEventListener('click', function() { /* ... satır oluşturma kodu aynı ... */ });
+            generateBtn.addEventListener('click', function() {
+                const count = parseInt(portCountInput.value, 10);
+                container.innerHTML = '';
+                if (count > 0 && count <= 50) {
+                    for (let i = 0; i < count; i++) {
+                        const clone = template.content.cloneNode(true);
+                        let html = clone.firstElementChild.outerHTML;
+                        html = html.replace(/{INDEX}/g, i).replace(/{ROW_NUMBER}/g, i + 1);
+                        container.insertAdjacentHTML('beforeend', html);
+                    }
+                    saveButtonContainer.style.display = 'block';
+                } else {
+                    saveButtonContainer.style.display = 'none';
+                }
+            });
 
             // Olay delegasyonu ile hem Port Tipi hem de Link Durumu olaylarını yakala
             container.addEventListener('change', function(e) {
                 if (e.target.classList.contains('port-type-selector')) {
                     const selectedValue = e.target.value;
                     const parentRow = e.target.closest('.port-row');
+
+                    // Bu satırdaki tüm dinamik alanları gizle
                     parentRow.querySelectorAll('.dynamic-field').forEach(field => field.style.display = 'none');
+
+                    // Seçime göre ilgili alanları göster
                     if (selectedValue === '@((int)PortTipiEnum.FC)' || selectedValue === '@((int)PortTipiEnum.VirtualFC)') {
                         parentRow.querySelector('.fiber-field').style.display = 'block';
                         parentRow.querySelector('.fc-field').style.display = 'block';
@@ -96,7 +114,25 @@
 
             container.addEventListener('click', function(e) {
                 if (e.target.classList.contains('status-btn')) {
-                    // ... (link durumu butonlarının click kodu aynı) ...
+                    const button = e.target;
+                    const group = button.closest('.link-status-group');
+                    const hiddenInput = group.querySelector('.link-status-hidden-input');
+                    const allButtonsInGroup = group.querySelectorAll('.status-btn');
+                    const newStatus = button.dataset.status;
+
+                    if (button.classList.contains('active')) {
+                        button.classList.remove('active', 'btn-success', 'btn-danger');
+                        button.classList.add(newStatus === 'Up' ? 'btn-outline-success' : 'btn-outline-danger');
+                        hiddenInput.value = '';
+                    } else {
+                        allButtonsInGroup.forEach(btn => {
+                            btn.classList.remove('active', 'btn-success', 'btn-danger');
+                            btn.classList.add(btn.dataset.status === 'Up' ? 'btn-outline-success' : 'btn-outline-danger');
+                        });
+                        button.classList.add('active', newStatus === 'Up' ? 'btn-success' : 'btn-danger');
+                        button.classList.remove(newStatus === 'Up' ? 'btn-outline-success' : 'btn-outline-danger');
+                        hiddenInput.value = newStatus;
+                    }
                 }
             });
         });

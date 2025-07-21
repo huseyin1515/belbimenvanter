@@ -1,0 +1,91 @@
+﻿@model BelbimEnv.Models.PortDetay
+
+@{
+    ViewData["Title"] = "Port Detayı";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 text-dark"><i class="fas fa-network-wired me-2"></i>Port Detayı: @Model.Aciklama</h4>
+            <a asp-action="Manage" asp-route-id="@Model.ServerId" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Port Yönetim Sayfasına Dön</a>
+        </div>
+    </div>
+    <div class="card-body">
+
+        <!-- 1. KATEGORİ: TİPE ÖZEL BİLGİLER -->
+        <h5><i class="fas fa-info-circle text-primary me-2"></i>Tipe Özel Bilgiler</h5>
+        <hr class="mt-1" />
+        <dl class="row">
+            <dt class="col-sm-3">Port Tipi</dt>
+            <dd class="col-sm-9"><span class="badge bg-info text-dark fs-6">@Model.PortTipi</span></dd>
+
+            @if (Model.PortTipi == PortTipiEnum.FC || Model.PortTipi == PortTipiEnum.VirtualFC)
+            {
+                <dt class="col-sm-3">Fiber MAC</dt>
+                <dd class="col-sm-9">@Model.FiberMAC</dd>
+                <dt class="col-sm-3">FC Uç Port Sayısı</dt>
+                <dd class="col-sm-9">@Model.FcUcPortSayisi</dd>
+            }
+            else if (Model.PortTipi == PortTipiEnum.Bakir)
+            {
+                <dt class="col-sm-3">Bakır MAC</dt>
+                <dd class="col-sm-9">@Model.BakirMAC</dd>
+                <dt class="col-sm-3">Bakır Uplink Port</dt>
+                <dd class="col-sm-9">@Model.BakirUplinkPort</dd>
+            }
+            else if (Model.PortTipi == PortTipiEnum.SAN)
+            {
+                <dt class="col-sm-3">WWPN</dt>
+                <dd class="col-sm-9">@Model.Wwpn</dd>
+            }
+        </dl>
+
+        <!-- 2. KATEGORİ: BAĞLANTI BİLGİLERİ -->
+        <h5 class="mt-4"><i class="fas fa-link text-primary me-2"></i>Bağlantı Bilgileri</h5>
+        <hr class="mt-1" />
+        <dl class="row">
+            <dt class="col-sm-3">Link Durumu</dt>
+            <dd class="col-sm-9">
+                @if (Model.LinkStatus?.ToLower() == "up")
+                {
+                    <span class="badge bg-success fs-6">Up</span>
+                }
+                else if (Model.LinkStatus?.ToLower() == "down")
+                {
+
+                    <span class="badge bg-danger fs-6">Down</span>
+                }
+                else
+                {
+
+                    <span class="badge bg-secondary fs-6">@Model.LinkStatus</span>
+                }
+            </dd>
+            <dt class="col-sm-3">Link Hızı</dt>
+            <dd class="col-sm-9">@Model.LinkSpeed</dd>
+            <dt class="col-sm-3">Port ID</dt>
+            <dd class="col-sm-9">@Model.PortId</dd>
+            <dt class="col-sm-3">NIC ID</dt>
+            <dd class="col-sm-9">@Model.NicId</dd>
+        </dl>
+
+        <!-- 3. KATEGORİ: KARŞI UÇ (SWITCH) BİLGİLERİ -->
+        <h5 class="mt-4"><i class="fas fa-random text-primary me-2"></i>Karşı Uç (Switch) Bilgileri</h5>
+        <hr class="mt-1" />
+        <dl class="row">
+            <dt class="col-sm-3">Switch Adı</dt>
+            <dd class="col-sm-9">@Model.SwName</dd>
+            <dt class="col-sm-3">Switch Port</dt>
+            <dd class="col-sm-9">@Model.SwPort</dd>
+            <dt class="col-sm-3">Switch'de Uç mu?</dt>
+            <dd class="col-sm-9">@Model.SwdeUcMi</dd>
+            <dt class="col-sm-3">Uç Port</dt>
+            <dd class="col-sm-9">@Model.UcPort</dd>
+        </dl>
+
+    </div>
+    <div class="card-footer text-end">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-edit me-1"></i> Bu Portu Düzenle</a>
+    </div>
+</div>
