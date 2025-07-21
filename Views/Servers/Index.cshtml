@@ -1,16 +1,15 @@
 ﻿@model IEnumerable<BelbimEnv.Models.Server>
 
 @{
-    ViewData["Title"] = "Envater Paneli";
+    ViewData["Title"] = "Envanter Paneli";
 }
 
-<!-- ========================================================== -->
-<!-- === MODERN EXCEL YÜKLEME MODAL PENCERESİ BAŞLANGIÇ === -->
-<!-- ========================================================== -->
+<!-- MODERN EXCEL YÜKLEME MODAL PENCERESİ -->
 <div class="modal fade" id="excelUploadModal" tabindex="-1" aria-labelledby="excelUploadModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form asp-controller="Servers" asp-action="ImportExcel" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
                 <div class="modal-header border-0">
                     <h5 class="modal-title" id="excelUploadModalLabel"><i class="fas fa-file-excel text-success me-2"></i>Excel ile Veri Yükle</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -28,20 +27,8 @@
                     <div>
                         <h6 class="mb-3">Yükleme Yöntemi</h6>
                         <div class="list-group">
-                            <label class="list-group-item d-flex gap-3">
-                                <input class="form-check-input flex-shrink-0" type="radio" name="importOption" value="append" checked>
-                                <div>
-                                    <strong class="d-block">Üzerine Ekle</strong>
-                                    <small class="text-muted">Mevcut kayıtlara yeni verileri ekler.</small>
-                                </div>
-                            </label>
-                            <label class="list-group-item d-flex gap-3">
-                                <input class="form-check-input flex-shrink-0" type="radio" name="importOption" value="replace">
-                                <div>
-                                    <strong class="d-block text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Tümünü Değiştir (Sıfırla)</strong>
-                                    <small class="text-muted">Tüm mevcut Envater  ve port kayıtlarını siler.</small>
-                                </div>
-                            </label>
+                            <label class="list-group-item d-flex gap-3"><input class="form-check-input flex-shrink-0" type="radio" name="importOption" value="append" checked><div><strong class="d-block">Üzerine Ekle</strong><small class="text-muted">Mevcut kayıtlara yeni verileri ekler.</small></div></label>
+                            <label class="list-group-item d-flex gap-3"><input class="form-check-input flex-shrink-0" type="radio" name="importOption" value="replace"><div><strong class="d-block text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Tümünü Değiştir (Sıfırla)</strong><small class="text-muted">Tüm mevcut envanter ve port kayıtlarını siler.</small></div></label>
                         </div>
                     </div>
                 </div>
@@ -53,40 +40,44 @@
         </div>
     </div>
 </div>
-<!-- ========================================================== -->
-<!-- === MODERN EXCEL YÜKLEME MODAL PENCERESİ BİTİŞ === -->
-<!-- ========================================================== -->
+
 <!-- Sayfa Başlığı, Arama ve Butonlar -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="text-primary"><i class="fas fa-server me-2"></i>@ViewData["Title"]</h3>
     <div>
         <div class="input-group d-inline-flex" style="width: 350px;">
             <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" id="serverSearchInput" class="form-control" placeholder="Envater  bilgilerinde ara...">
+            <input type="text" id="serverSearchInput" class="form-control" placeholder="Envanter bilgilerinde ara...">
         </div>
         <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#excelUploadModal">
             <i class="fas fa-file-excel me-1"></i> Excel ile Yükle
         </button>
         <a asp-action="Create" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Yeni Envater Ekle
+            <i class="fas fa-plus me-1"></i> Yeni Envanter Ekle
         </a>
     </div>
 </div>
 
-<!-- ========================================================== -->
-<!-- === EKSİK OLAN VE GERİ EKLENEN SUNUCU TABLOSU === -->
-<!-- ========================================================== -->
+<!-- SUNUCU LİSTESİ KARTI -->
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover table-bordered table-sm">
                 <thead class="table-dark">
-                    <tr><th>ID</th><th>Host DNS</th><th>IP Adresi</th><th>Model</th><th>Service Tag</th><th>Lokasyon</th><th class="text-end">İşlemler</th></tr>
+                    <tr>
+                        <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["IdSortParm"]">ID <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["HostDnsSortParm"]">Host DNS <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["IpAdressSortParm"]">IP Adresi <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["ModelSortParm"]">Model <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["ServiceTagSortParm"]">Service Tag <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["LocationSortParm"]">Lokasyon <i class="fas fa-sort"></i></a></th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
                 </thead>
                 <tbody id="serverTableBody">
                     @if (Model == null || !Model.Any())
                     {
-                        <tr><td colspan="7" class="text-center py-4"><p class="text-muted">Henüz hiç Envater kaydı bulunmuyor.</p></td></tr>
+                        <tr><td colspan="7" class="text-center py-4"><p class="text-muted">Henüz hiç envanter kaydı bulunmuyor.</p></td></tr>
                     }
                     else
                     {
@@ -110,7 +101,7 @@
                     }
                 </tbody>
             </table>
-            <p id="serverNoResultsMessage" class="text-center text-muted" style="display: none;">Arama kriterlerinize uygun Envater bulunamadı.</p>
+            <p id="serverNoResultsMessage" class="text-center text-muted" style="display: none;">Arama kriterlerinize uygun envanter bulunamadı.</p>
         </div>
     </div>
 </div>
@@ -121,7 +112,7 @@
         document.addEventListener("DOMContentLoaded", function() {
             const searchInput = document.getElementById('serverSearchInput');
             const tableBody = document.getElementById('serverTableBody');
-            if (tableBody) { // Null kontrolü
+            if (tableBody) {
                 const rows = tableBody.getElementsByTagName('tr');
                 const noResultsMessage = document.getElementById('serverNoResultsMessage');
                 searchInput.addEventListener('keyup', function() {
@@ -162,19 +153,19 @@
                     uploadButton.disabled = true;
                 }
             });
-
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, preventDefaults, false));
             function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
             ['dragenter', 'dragover'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.add('highlight'), false));
             ['dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.remove('highlight'), false));
-
             dropArea.addEventListener('drop', function(e) {
                 fileInput.files = e.dataTransfer.files;
                 fileInput.dispatchEvent(new Event('change'));
             });
         });
     </script>
+}
 
+@section Styles {
     <!-- Modal için CSS -->
     <style>
         .border-dashed {
@@ -189,5 +180,17 @@
             border-color: var(--bs-primary);
             background-color: var(--bs-light);
         }
+    </style>
+    <!-- Sıralama linkleri için CSS -->
+    <style>
+        .sort-link {
+            color: white;
+            text-decoration: none;
+        }
+
+            .sort-link:hover {
+                color: #adb5bd;
+                text-decoration: none;
+            }
     </style>
 }

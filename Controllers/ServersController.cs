@@ -18,10 +18,37 @@ namespace BelbimEnv.Controllers
         private readonly ApplicationDbContext _context;
         public ServersController(ApplicationDbContext context) { _context = context; }
 
-        public async Task<IActionResult> Index()
+        // GÜNCELLENMİŞ METOT: SIRALAMA ÖZELLİĞİ EKLENDİ
+        public async Task<IActionResult> Index(string sortOrder)
         {
-            var servers = await _context.Servers.OrderBy(s => s.Id).ToListAsync();
-            return View(servers);
+            ViewData["CurrentSort"] = sortOrder;
+            ViewData["IdSortParm"] = sortOrder == "id" ? "id_desc" : "id";
+            ViewData["HostDnsSortParm"] = String.IsNullOrEmpty(sortOrder) ? "host_desc" : "";
+            ViewData["IpAdressSortParm"] = sortOrder == "ip" ? "ip_desc" : "ip";
+            ViewData["ModelSortParm"] = sortOrder == "model" ? "model_desc" : "model";
+            ViewData["ServiceTagSortParm"] = sortOrder == "servicetag" ? "servicetag_desc" : "servicetag";
+            ViewData["LocationSortParm"] = sortOrder == "location" ? "location_desc" : "location";
+
+            var servers = from s in _context.Servers
+                          select s;
+
+            switch (sortOrder)
+            {
+                case "id_desc": servers = servers.OrderByDescending(s => s.Id); break;
+                case "id": servers = servers.OrderBy(s => s.Id); break;
+                case "host_desc": servers = servers.OrderByDescending(s => s.HostDns); break;
+                case "ip": servers = servers.OrderBy(s => s.IpAdress); break;
+                case "ip_desc": servers = servers.OrderByDescending(s => s.IpAdress); break;
+                case "model": servers = servers.OrderBy(s => s.Model); break;
+                case "model_desc": servers = servers.OrderByDescending(s => s.Model); break;
+                case "servicetag": servers = servers.OrderBy(s => s.ServiceTag); break;
+                case "servicetag_desc": servers = servers.OrderByDescending(s => s.ServiceTag); break;
+                case "location": servers = servers.OrderBy(s => s.Location); break;
+                case "location_desc": servers = servers.OrderByDescending(s => s.Location); break;
+                default: servers = servers.OrderBy(s => s.HostDns); break;
+            }
+
+            return View(await servers.AsNoTracking().ToListAsync());
         }
 
         public async Task<IActionResult> Details(int? id)
@@ -160,14 +187,10 @@ namespace BelbimEnv.Controllers
                                 Location = row.Table.Columns.Contains("Location") ? row["Location"]?.ToString() : null,
                                 OS = row.Table.Columns.Contains("o/s") ? row["o/s"]?.ToString() : null,
                                 IloIdracIp = row.Table.Columns.Contains("ilo/idrac ip") ? row["ilo/idrac ip"]?.ToString() : null,
-
-                                // DÜZELTME: Doğru sütunlar doğru özelliklere atanıyor.
-                                Kabin = row.Table.Columns.Contains("_akabin") ? row["_akabin"]?.ToString() : null,
-                                KabinU = row.Table.Columns.Contains("kabin_u") ? row["kabin_u"]?.ToString() : null,
-
+                                Kabin = row.Table.Columns.Contains("_kabin") ? row["_kabin"]?.ToString() : null,
                                 RearFront = row.Table.Columns.Contains("Rear/Front") ? row["Rear/Front"]?.ToString() : null,
+                                KabinU = row.Table.Columns.Contains("kabin_u") ? row["kabin_u"]?.ToString() : null,
                                 IsttelkomEtiketId = row.Table.Columns.Contains("İsttelkom Etiket I") ? row["İsttelkom Etiket I"]?.ToString() : null,
-
                                 DateAdded = DateTime.Now,
                                 LastUpdated = DateTime.Now
                             };

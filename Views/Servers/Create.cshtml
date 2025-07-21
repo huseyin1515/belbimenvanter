@@ -4,6 +4,26 @@
     ViewData["Title"] = "Yeni Sunucu Ekle";
 }
 
+<!-- KABİN SEÇİCİ MODAL PENCERESİ -->
+<div class="modal fade" id="rackSelectorModal" tabindex="-1" style="--bs-modal-width: 90vw;">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Kabin Konumu Seç</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="rackSelectorBody">
+                <div class="text-center"><div class="spinner-border"></div></div>
+            </div>
+            <div class="modal-footer">
+                <div class="me-auto"><strong id="selectionInfo">Seçim Yapılmadı</strong></div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                <button type="button" id="confirmSelectionBtn" class="btn btn-primary" disabled>Seçimi Onayla</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <h4><i class="fas fa-plus-circle text-success me-2"></i>@ViewData["Title"]</h4>
 <hr />
 
@@ -15,81 +35,36 @@
             <h5 class="mt-2">Temel Kimlik Bilgileri</h5>
             <hr class="mt-1" />
             <div class="row g-3">
-                <div class="form-group col-md-6">
-                    <label asp-for="HostDns" class="control-label"></label>
-                    <input asp-for="HostDns" class="form-control" />
-                    <span asp-validation-for="HostDns" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-6">
-                    <label asp-for="IpAdress" class="control-label"></label>
-                    <input asp-for="IpAdress" class="form-control" />
-                    <span asp-validation-for="IpAdress" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-6">
-                    <label asp-for="Model" class="control-label"></label>
-                    <input asp-for="Model" class="form-control" />
-                    <span asp-validation-for="Model" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-6">
-                    <label asp-for="ServiceTag" class="control-label"></label>
-                    <input asp-for="ServiceTag" class="form-control" />
-                    <span asp-validation-for="ServiceTag" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-6">
-                    <label asp-for="IsttelkomEtiketId" class="control-label"></label>
-                    <input asp-for="IsttelkomEtiketId" class="form-control" />
-                    <span asp-validation-for="IsttelkomEtiketId" class="text-danger"></span>
-                </div>
+                <div class="form-group col-md-6"><label asp-for="HostDns" class="control-label"></label><input asp-for="HostDns" class="form-control" /><span asp-validation-for="HostDns" class="text-danger"></span></div>
+                <div class="form-group col-md-6"><label asp-for="IpAdress" class="control-label"></label><input asp-for="IpAdress" class="form-control" /><span asp-validation-for="IpAdress" class="text-danger"></span></div>
+                <div class="form-group col-md-6"><label asp-for="Model" class="control-label"></label><input asp-for="Model" class="form-control" /><span asp-validation-for="Model" class="text-danger"></span></div>
+                <div class="form-group col-md-6"><label asp-for="ServiceTag" class="control-label"></label><input asp-for="ServiceTag" class="form-control" /><span asp-validation-for="ServiceTag" class="text-danger"></span></div>
+                <div class="form-group col-md-6"><label asp-for="IsttelkomEtiketId" class="control-label"></label><input asp-for="IsttelkomEtiketId" class="form-control" /><span asp-validation-for="IsttelkomEtiketId" class="text-danger"></span></div>
             </div>
 
             <h5 class="mt-4">Yazılım ve Sanallaştırma</h5>
             <hr class="mt-1" />
             <div class="row g-3">
-                <div class="form-group col-md-4">
-                    <label asp-for="OS" class="control-label"></label>
-                    <input asp-for="OS" class="form-control" />
-                    <span asp-validation-for="OS" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-4">
-                    <label asp-for="VcenterAdress" class="control-label"></label>
-                    <input asp-for="VcenterAdress" class="form-control" />
-                    <span asp-validation-for="VcenterAdress" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-4">
-                    <label asp-for="Cluster" class="control-label"></label>
-                    <input asp-for="Cluster" class="form-control" />
-                    <span asp-validation-for="Cluster" class="text-danger"></span>
-                </div>
+                <div class="form-group col-md-4"><label asp-for="OS" class="control-label"></label><input asp-for="OS" class="form-control" /><span asp-validation-for="OS" class="text-danger"></span></div>
+                <div class="form-group col-md-4"><label asp-for="VcenterAdress" class="control-label"></label><input asp-for="VcenterAdress" class="form-control" /><span asp-validation-for="VcenterAdress" class="text-danger"></span></div>
+                <div class="form-group col-md-4"><label asp-for="Cluster" class="control-label"></label><input asp-for="Cluster" class="form-control" /><span asp-validation-for="Cluster" class="text-danger"></span></div>
             </div>
 
             <h5 class="mt-4">Fiziksel Konum</h5>
             <hr class="mt-1" />
-            <div class="row g-3">
-                <div class="form-group col-md-6">
-                    <label asp-for="Location" class="control-label"></label>
-                    <input asp-for="Location" class="form-control" />
-                    <span asp-validation-for="Location" class="text-danger"></span>
+            <div class="row g-3 align-items-end">
+                <div class="form-group col-md-8"><label asp-for="Location" class="control-label"></label><input asp-for="Location" class="form-control" id="locationInput" /><span asp-validation-for="Location" class="text-danger"></span></div>
+                <div class="form-group col-md-4"><label asp-for="IloIdracIp" class="control-label"></label><input asp-for="IloIdracIp" class="form-control" /><span asp-validation-for="IloIdracIp" class="text-danger"></span></div>
+
+                <div class="col-12 mt-3">
+                    <label class="form-label">Kabin Konumu</label>
+                    <div id="selection-summary" class="alert alert-secondary p-2">Henüz bir konum seçilmedi.</div>
+                    <button type="button" id="openRackSelectorBtn" class="btn btn-outline-primary"><i class="fas fa-th me-1"></i> Görsel Olarak Konum Seç</button>
                 </div>
-                <div class="form-group col-md-6">
-                    <label asp-for="IloIdracIp" class="control-label"></label>
-                    <input asp-for="IloIdracIp" class="form-control" />
-                    <span asp-validation-for="IloIdracIp" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-4">
-                    <label asp-for="Kabin" class="control-label"></label>
-                    <input asp-for="Kabin" class="form-control" placeholder="Örn: 104" />
-                    <span asp-validation-for="Kabin" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-4">
-                    <label asp-for="KabinU" class="control-label"></label>
-                    <input asp-for="KabinU" class="form-control" placeholder="Örn: 37-41 veya 9" />
-                    <span asp-validation-for="KabinU" class="text-danger"></span>
-                </div>
-                <div class="form-group col-md-4">
-                    <label asp-for="RearFront" class="control-label"></label>
-                    <input asp-for="RearFront" class="form-control" placeholder="Örn: F veya R" />
-                    <span asp-validation-for="RearFront" class="text-danger"></span>
-                </div>
+
+                <input type="hidden" asp-for="Kabin" id="hiddenKabin" />
+                <input type="hidden" asp-for="KabinU" id="hiddenKabinU" />
+                <input type="hidden" asp-for="RearFront" id="hiddenRearFront" />
             </div>
 
             <div class="form-group mt-4">
@@ -102,4 +77,233 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const modal = new bootstrap.Modal(document.getElementById('rackSelectorModal'));
+            const modalBody = document.getElementById('rackSelectorBody');
+            const openModalBtn = document.getElementById('openRackSelectorBtn');
+            const confirmBtn = document.getElementById('confirmSelectionBtn');
+            const selectionInfo = document.getElementById('selectionInfo');
+            const selectionSummary = document.getElementById('selection-summary');
+
+            let selectedRack = null;
+            let selectedUnits = [];
+
+            function loadModalContent(location = '') {
+                modalBody.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
+                let url = `/Visualization/RackSelector?location=${encodeURIComponent(location)}`;
+                fetch(url)
+                    .then(response => response.text())
+                    .then(html => { modalBody.innerHTML = html; });
+            }
+
+            openModalBtn.addEventListener('click', function () {
+                loadModalContent();
+                modal.show();
+            });
+
+            modalBody.addEventListener('click', function (e) {
+                if (e.target.classList.contains('location-select-btn')) {
+                    loadModalContent(e.target.dataset.location);
+                }
+                if (e.target.classList.contains('selectable-u')) {
+                    const currentRack = e.target.closest('.rack');
+                    if (selectedRack && selectedRack !== currentRack) {
+                        selectedRack.querySelectorAll('.selected-u').forEach(u => u.classList.remove('selected-u'));
+                        selectedUnits = [];
+                    }
+                    selectedRack = currentRack;
+                    e.target.classList.toggle('selected-u');
+
+                    selectedUnits = Array.from(selectedRack.querySelectorAll('.selected-u'))
+                                        .map(u => parseInt(u.dataset.u))
+                                        .sort((a, b) => a - b);
+
+                    updateSelectionInfo();
+                }
+                 if (e.target.id === 'backToLocationsBtn') {
+                    loadModalContent();
+                }
+            });
+
+            function updateSelectionInfo() {
+                if (selectedUnits.length === 0) {
+                    selectionInfo.textContent = "Seçim Yapılmadı";
+                    confirmBtn.disabled = true;
+                } else if (selectedUnits.length === 1) {
+                    selectionInfo.textContent = `Seçilen: U ${selectedUnits[0]}`;
+                    confirmBtn.disabled = false;
+                } else {
+                    let isConsecutive = true;
+                    for (let i = 0; i < selectedUnits.length - 1; i++) {
+                        if (selectedUnits[i+1] !== selectedUnits[i] + 1) { isConsecutive = false; break; }
+                    }
+
+                    if (isConsecutive) {
+                        selectionInfo.textContent = `Seçilen: U ${selectedUnits[0]}-${selectedUnits[selectedUnits.length - 1]}`;
+                        confirmBtn.disabled = false;
+                    } else {
+                        selectionInfo.textContent = "HATA: Lütfen ardışık U'lar seçin.";
+                        confirmBtn.disabled = true;
+                    }
+                }
+            }
+
+            confirmBtn.addEventListener('click', function() {
+                if (!selectedRack || selectedUnits.length === 0) return;
+
+                const rackName = selectedRack.dataset.rackName;
+                const rackSide = selectedRack.dataset.rackSide;
+                const uRange = selectedUnits.length === 1 ? selectedUnits[0].toString() : `${selectedUnits[0]}-${selectedUnits[selectedUnits.length - 1]}`;
+
+                document.getElementById('hiddenKabin').value = rackName;
+                document.getElementById('hiddenKabinU').value = uRange;
+                document.getElementById('hiddenRearFront').value = rackSide;
+                document.getElementById('locationInput').value = document.querySelector('#rackSelectorBody h5').textContent.match(/\(([^)]+)\)/)[1];
+
+                selectionSummary.textContent = `Seçilen Konum: Kabin ${rackName} (${rackSide}), U Aralığı: ${uRange}`;
+                selectionSummary.classList.remove('alert-secondary');
+                selectionSummary.classList.add('alert-success');
+
+                modal.hide();
+            });
+
+            document.getElementById('rackSelectorModal').addEventListener('hidden.bs.modal', function () {
+                 selectedRack = null;
+                 selectedUnits = [];
+                 updateSelectionInfo();
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .rack-container.selectable .empty-unit.selectable-u {
+            transition: background-color 0.1s;
+        }
+
+            .rack-container.selectable .empty-unit.selectable-u:hover {
+                background-color: #a7d7f9;
+                cursor: pointer;
+            }
+
+        .rack-container.selectable .empty-unit.selected-u {
+            background-color: #0d6efd;
+            border: 1px solid #0a58ca;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8l2 2 4-4'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .rack-container.selectable .occupied-unit {
+            height: 18px;
+            margin-bottom: 2px;
+            background-color: #e9ecef;
+            border: 1px dashed #ced4da;
+        }
+
+        .occupied-server-block {
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+            border: 1px solid rgba(0,0,0,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 2px;
+            box-sizing: border-box;
+            color: white;
+            background-color: #6c757d;
+        }
+
+        .occupied-server-sub-block {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 8px;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+            .occupied-server-sub-block .server-name {
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .occupied-server-sub-block .server-u {
+                background-color: rgba(0,0,0,0.3);
+                padding: 0 4px;
+                border-radius: 3px;
+            }
+
+        .rack-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .rack-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 220px;
+        }
+
+        .rack-header {
+            background-color: #6c757d;
+            color: white;
+            padding: 5px;
+            font-weight: bold;
+            text-align: center;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .rack {
+            display: flex;
+            flex-grow: 1;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-top: none;
+        }
+
+        .rack-side {
+            background-color: #495057;
+            padding: 5px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .u-hole {
+            width: 20px;
+            height: 18px;
+            margin-bottom: 2px;
+            color: #adb5bd;
+            font-size: 9px;
+            text-align: center;
+            line-height: 18px;
+        }
+
+        .rack-middle {
+            flex-grow: 1;
+        }
+
+        .rack-units {
+            padding: 5px;
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        .empty-unit {
+            height: 18px;
+            margin-bottom: 2px;
+            box-sizing: border-box;
+            background-image: linear-gradient(45deg, #f8f9fa 25%, #e9ecef 25%, #e9ecef 50%, #f8f9fa 50%, #f8f9fa 75%, #e9ecef 75%, #e9ecef 100%);
+            background-size: 8px 8px;
+        }
+    </style>
 }

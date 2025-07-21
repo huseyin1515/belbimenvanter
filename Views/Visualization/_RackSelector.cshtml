@@ -1,0 +1,75 @@
+﻿@model BelbimEnv.Models.RackVisualizationViewModel
+
+@{
+    var colorMap = new Dictionary<string, string>();
+    var colors = new List<string> { "#6c757d", "#198754", "#dc3545", "#fd7e14", "#ffc107", "#0dcaf0" }; // Dolu sunucu renkleri
+    int colorIndex = 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="mb-0">2. Adım: Boş Bir Alan Seçin (@Model.SelectedLocation)</h5>
+    <button type="button" class="btn btn-sm btn-link" id="backToLocationsBtn">« Geri Dön</button>
+</div>
+
+<div class="rack-container selectable">
+    @if (!Model.Racks.Any())
+    {
+        <div class="alert alert-info">Bu lokasyonda gösterilecek kabin verisi bulunamadı.</div>
+    }
+
+    @foreach (var rack in Model.Racks)
+    {
+        var processedServerIds = new HashSet<int>();
+        <div class="rack-wrapper">
+            <div class="rack-header">@rack.Key</div>
+            <div class="rack" data-rack-name="@rack.Key.Split(' ')[0]" data-rack-side="@(rack.Key.Contains("(Ön)") ? "F" : "R")">
+                <div class="rack-side left">@for (int i = 42; i >= 1; i--) {
+                <div class="u-hole">@i</div>
+            }
+</div>
+            <div class="rack-middle">
+                <div class="rack-units">
+                    @{
+                        var sortedUnits = rack.Value.OrderByDescending(u => u.U_Number).ToList();
+                    }
+                    @for (int i = 0; i < sortedUnits.Count; i++)
+                    {
+                        var unit = sortedUnits[i];
+                        if (unit.IsOccupied)
+                        {
+                            var firstServer = unit.OccupyingServers.First();
+                            if (!processedServerIds.Contains(firstServer.Id))
+                            {
+                                processedServerIds.Add(firstServer.Id);
+                                int uSpan = rack.Value.Count(u => u.IsOccupied && u.OccupyingServers.Contains(firstServer));
+                                int height = (uSpan * 20) - 2;
+
+                                if (!colorMap.ContainsKey(firstServer.Model)) { colorMap[firstServer.Model] = colors[colorIndex++ % colors.Count]; }
+
+                                <div class="occupied-server-block" style="height: @(height)px; background-color: @colorMap[firstServer.Model];">
+                                    @foreach (var server in unit.OccupyingServers)
+                                    {
+                                        <div class="occupied-server-sub-block" title="@server.HostDns">
+                                            <span class="server-name">@server.HostDns</span>
+                                            <span class="server-u">@server.KabinU</span>
+                                        </div>
+                                    }
+                                </div>
+                                i += (uSpan - 1);
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-unit selectable-u" data-u="@unit.U_Number"></div>
+                        }
+                    }
+                </div>
+            </div>
+            <div class="rack-side right">@for (int i = 42; i >= 1; i--) {
+            <div class="u-hole">@i</div>
+                        }
+</div>
+        </div>
+    </div>
+        }
+</div>

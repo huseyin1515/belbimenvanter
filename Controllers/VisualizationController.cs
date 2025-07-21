@@ -19,7 +19,6 @@ namespace BelbimEnv.Controllers
             _context = context;
         }
 
-        // GET: /Visualization/Index veya /Visualization
         public async Task<IActionResult> Index()
         {
             var allLocations = await _context.Servers
@@ -32,7 +31,6 @@ namespace BelbimEnv.Controllers
             return View(allLocations);
         }
 
-        // POST: /Visualization/FindServer
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> FindServer(string searchTerm)
@@ -57,14 +55,13 @@ namespace BelbimEnv.Controllers
 
             if (string.IsNullOrEmpty(server.Location) || string.IsNullOrEmpty(server.Kabin) || string.IsNullOrEmpty(server.KabinU))
             {
-                TempData["WarningMessage"] = $"'{server.HostDns}' sunucusu bulundu, ancak kabin konum bilgileri (Lokasyon, Kabin, Kabin U) eksik olduğu için görselleştirilemiyor. Sunucunun kendi detay sayfası açıldı.";
+                TempData["WarningMessage"] = $"'{server.HostDns}' sunucusu bulundu, ancak kabin konum bilgileri eksik olduğu için görselleştirilemiyor. Sunucunun kendi detay sayfası açıldı.";
                 return RedirectToAction("Details", "Servers", new { id = server.Id });
             }
 
             return RedirectToAction(nameof(RackView), new { location = server.Location, highlight = server.Id });
         }
 
-        // GET: /Visualization/RackView?location=BSK&highlight=809
         public async Task<IActionResult> RackView(string location)
         {
             if (string.IsNullOrEmpty(location)) { return RedirectToAction(nameof(Index)); }
@@ -94,10 +91,7 @@ namespace BelbimEnv.Controllers
 
                     for (int u = startU; u <= endU; u++)
                     {
-                        if (!targetMap.ContainsKey(u))
-                        {
-                            targetMap[u] = new List<Server>();
-                        }
+                        if (!targetMap.ContainsKey(u)) { targetMap[u] = new List<Server>(); }
                         targetMap[u].Add(server);
                     }
                 }
@@ -114,6 +108,58 @@ namespace BelbimEnv.Controllers
                 viewModel.Racks[cabinetName + " (Arka)"] = rearUnits;
             }
             return View(viewModel);
+        }
+
+        // YENİ EKLENEN METOT
+        public async Task<IActionResult> RackSelector(string location, int serverIdToIgnore = 0)
+        {
+            if (string.IsNullOrEmpty(location))
+            {
+                var allLocations = await _context.Servers.Where(s => !string.IsNullOrEmpty(s.Location))
+                                                        .Select(s => s.Location).Distinct().OrderBy(l => l).ToListAsync();
+                return PartialView("_RackSelectorLocations", allLocations);
+            }
+
+            var allServers = await _context.Servers.AsNoTracking()
+                                        .Where(s => s.Id != serverIdToIgnore)
+                                        .ToListAsync();
+
+            var viewModel = new RackVisualizationViewModel { SelectedLocation = location };
+            var serversInLocation = allServers.Where(s => s.Location == location && !string.IsNullOrEmpty(s.Kabin) && !string.IsNullOrEmpty(s.KabinU)).ToList();
+
+            // Lokasyondaki tüm kabinleri al (içleri boş bile olsa)
+            var cabinetsInLocation = allServers.Where(s => s.Location == location && !string.IsNullOrEmpty(s.Kabin)).Select(s => s.Kabin).Distinct().OrderBy(c => c);
+
+            foreach (var cabinetName in cabinetsInLocation)
+            {
+                var frontU_Map = new Dictionary<int, List<Server>>();
+                var rearU_Map = new Dictionary<int, List<Server>>();
+                var serversInCabinet = serversInLocation.Where(s => s.Kabin == cabinetName);
+
+                foreach (var server in serversInCabinet)
+                {
+                    var (startU, endU) = ParseKabinU(server.KabinU);
+                    if (startU == 0 || endU == 0) continue;
+                    var targetMap = (server.RearFront == "R" || server.RearFront == "Rear") ? rearU_Map : frontU_Map;
+                    for (int u = startU; u <= endU; u++)
+                    {
+                        if (!targetMap.ContainsKey(u)) { targetMap[u] = new List<Server>(); }
+                        targetMap[u].Add(server);
+                    }
+                }
+
+                var frontUnits = new List<RackUnitViewModel>();
+                var rearUnits = new List<RackUnitViewModel>();
+                for (int i = 1; i <= RACK_SIZE_U; i++)
+                {
+                    frontUnits.Add(new RackUnitViewModel { U_Number = i, OccupyingServers = frontU_Map.GetValueOrDefault(i, new List<Server>()) });
+                    rearUnits.Add(new RackUnitViewModel { U_Number = i, OccupyingServers = rearU_Map.GetValueOrDefault(i, new List<Server>()) });
+                }
+
+                viewModel.Racks[cabinetName + " (Ön)"] = frontUnits;
+                viewModel.Racks[cabinetName + " (Arka)"] = rearUnits;
+            }
+            return PartialView("_RackSelector", viewModel);
         }
 
         private (int, int) ParseKabinU(string kabinU)
