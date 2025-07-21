@@ -50,6 +50,10 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "BrowardHealth.ExcelReaderWrapper": {
+              "target": "Package",
+              "version": "[1.0.7, )"
+            },
             "CsvHelper": {
               "target": "Package",
               "version": "[33.1.0, )"

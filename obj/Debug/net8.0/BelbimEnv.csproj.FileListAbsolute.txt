@@ -344,3 +344,6 @@ C:\Users\Ozgur\source\repos\belbimenvanter\obj\Debug\net8.0\refint\BelbimEnv.dll
 C:\Users\Ozgur\source\repos\belbimenvanter\obj\Debug\net8.0\BelbimEnv.pdb
 C:\Users\Ozgur\source\repos\belbimenvanter\obj\Debug\net8.0\BelbimEnv.genruntimeconfig.cache
 C:\Users\Ozgur\source\repos\belbimenvanter\obj\Debug\net8.0\ref\BelbimEnv.dll
+C:\Users\Ozgur\source\repos\belbimenvanter\bin\Debug\net8.0\BrowardHealth.ExcelReaderWrapper.dll
+C:\Users\Ozgur\source\repos\belbimenvanter\bin\Debug\net8.0\ExcelDataReader.dll
+C:\Users\Ozgur\source\repos\belbimenvanter\bin\Debug\net8.0\ExcelDataReader.DataSet.dll

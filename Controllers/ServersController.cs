@@ -2,13 +2,14 @@
 using BelbimEnv.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using CsvHelper;
-using CsvHelper.Configuration;
-using System.Globalization;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System;
+using Microsoft.AspNetCore.Http;
+using System.IO;
+using ExcelDataReader; // Excel okumak için eklendi
+using System.Data;     // DataTable kullanmak için eklendi
 
 namespace BelbimEnv.Controllers
 {
@@ -17,18 +18,20 @@ namespace BelbimEnv.Controllers
         private readonly ApplicationDbContext _context;
         public ServersController(ApplicationDbContext context) { _context = context; }
 
+        //==================================================================
+        // MEVCUT CRUD METOTLARI
+        //==================================================================
+
         public async Task<IActionResult> Index()
         {
-            var servers = await _context.Servers.Include(s => s.PortDetaylari).ToListAsync();
+            var servers = await _context.Servers.OrderBy(s => s.Id).ToListAsync();
             return View(servers);
         }
 
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
-            var server = await _context.Servers
-                .Include(s => s.PortDetaylari)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var server = await _context.Servers.Include(s => s.PortDetaylari).FirstOrDefaultAsync(m => m.Id == id);
             if (server == null) return NotFound();
             return View(server);
         }
@@ -45,6 +48,7 @@ namespace BelbimEnv.Controllers
                 server.LastUpdated = DateTime.Now;
                 _context.Add(server);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Yeni sunucu başarıyla eklendi.";
                 return RedirectToAction(nameof(Index));
             }
             return View(server);
@@ -69,12 +73,11 @@ namespace BelbimEnv.Controllers
                 {
                     var serverFromDb = await _context.Servers.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
                     if (serverFromDb == null) return NotFound();
-
                     serverFromForm.DateAdded = serverFromDb.DateAdded;
                     serverFromForm.LastUpdated = DateTime.Now;
-
                     _context.Update(serverFromForm);
                     await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Sunucu bilgileri başarıyla güncellendi.";
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -101,43 +104,90 @@ namespace BelbimEnv.Controllers
             var server = await _context.Servers.FindAsync(id);
             if (server != null)
             {
+                var relatedPorts = _context.PortDetaylari.Where(p => p.ServerId == id);
+                _context.PortDetaylari.RemoveRange(relatedPorts);
                 _context.Servers.Remove(server);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Sunucu ve ilişkili portları başarıyla silindi.";
             }
             return RedirectToAction(nameof(Index));
         }
 
         // ====================================================================
-        // === YENİDEN EKLENEN CSV YÜKLEME METODU VE MAP SINIFI BAŞLANGIÇ ===
+        // === EXCEL (.xlsx) YÜKLEME METODU (TAMAMEN YENİDEN YAZILDI) ===
         // ====================================================================
 
         [HttpPost]
-        public async Task<IActionResult> ImportCsv(IFormFile file, string importOption)
+        public async Task<IActionResult> ImportExcel(IFormFile file, string importOption)
         {
             if (file == null || file.Length == 0)
             {
-                TempData["ErrorMessage"] = "Lütfen bir CSV dosyası seçin.";
+                TempData["ErrorMessage"] = "Lütfen bir Excel (.xlsx) dosyası seçin.";
                 return RedirectToAction(nameof(Index));
             }
+
+            if (Path.GetExtension(file.FileName).ToLower() != ".xlsx")
+            {
+                TempData["ErrorMessage"] = "Lütfen sadece .xlsx uzantılı Excel dosyası yükleyin.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 
             var serversToImport = new List<Server>();
             try
             {
-                using var reader = new StreamReader(file.OpenReadStream());
-                using var csv = new CsvReader(reader, CultureInfo.InvariantCulture);
-
-                csv.Context.RegisterClassMap<ServerMap>();
-                serversToImport = csv.GetRecords<Server>().ToList();
-
-                foreach (var server in serversToImport)
+                using (var stream = new MemoryStream())
                 {
-                    server.DateAdded = DateTime.Now;
-                    server.LastUpdated = DateTime.Now;
+                    await file.CopyToAsync(stream);
+                    using (var reader = ExcelReaderFactory.CreateReader(stream))
+                    {
+                        var result = reader.AsDataSet(new ExcelDataSetConfiguration()
+                        {
+                            ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = true }
+                        });
+
+                        DataTable dataTable = result.Tables[0];
+
+                        foreach (DataRow row in dataTable.Rows)
+                        {
+                            if (row["Host DNS"] == null || string.IsNullOrEmpty(row["Host DNS"].ToString()))
+                            {
+                                continue;
+                            }
+
+                            var server = new Server
+                            {
+                                HostDns = row["Host DNS"]?.ToString(),
+                                IpAdress = row["IP Adress"]?.ToString(),
+                                Model = row["Model"]?.ToString(),
+                                ServiceTag = row["Service Tag / Serial Number"]?.ToString(),
+                                VcenterAdress = row["Vcenter Adress"]?.ToString(),
+                                Cluster = row["Cluster"]?.ToString(),
+                                Location = row["Location"]?.ToString(),
+                                OS = row["o/s"]?.ToString(),
+                                IloIdracIp = row["ilo/idrac ip"]?.ToString(),
+                                Kabin = row["KABİN"]?.ToString(),
+                                RearFront = row["Rear/Front"]?.ToString(),
+                                KabinU = int.TryParse(row["KABİN U"]?.ToString(), out int kabinU) ? kabinU : null,
+                                IsttelkomEtiketId = row["İsttelkom Etiket ID"]?.ToString(),
+                                DateAdded = DateTime.Now,
+                                LastUpdated = DateTime.Now
+                            };
+                            serversToImport.Add(server);
+                        }
+                    }
                 }
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"CSV dosyası okunurken hata: {ex.Message}";
+                TempData["ErrorMessage"] = $"Excel dosyası okunurken hata: {ex.Message}. Lütfen dosya formatını ve sütun başlıklarını kontrol edin.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!serversToImport.Any())
+            {
+                TempData["ErrorMessage"] = "Excel dosyasında işlenecek geçerli veri bulunamadı.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -145,8 +195,9 @@ namespace BelbimEnv.Controllers
             {
                 if (importOption == "replace")
                 {
-                    // UYARI: Bu işlem tüm sunucuları ve onlara bağlı port detaylarını silecektir!
+                    _context.PortDetaylari.RemoveRange(_context.PortDetaylari);
                     _context.Servers.RemoveRange(_context.Servers);
+                    await _context.SaveChangesAsync();
                 }
 
                 await _context.Servers.AddRangeAsync(serversToImport);
@@ -159,23 +210,5 @@ namespace BelbimEnv.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
-
-        // CSVHelper'ın Server nesnesini nasıl eşleyeceğini belirten sınıf.
-        public class ServerMap : ClassMap<Server>
-        {
-            public ServerMap()
-            {
-                AutoMap(CultureInfo.InvariantCulture);
-                // Veritabanı tarafından yönetilen veya CSV'de olmayan alanları görmezden gel.
-                Map(m => m.Id).Ignore();
-                Map(m => m.DateAdded).Ignore();
-                Map(m => m.LastUpdated).Ignore();
-                Map(m => m.PortDetaylari).Ignore();
-            }
-        }
-
-        // ====================================================================
-        // === YENİDEN EKLENEN CSV YÜKLEME METODU VE MAP SINIFI BİTİŞ ===
-        // ====================================================================
     }
 }

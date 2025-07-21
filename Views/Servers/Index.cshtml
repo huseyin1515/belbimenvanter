@@ -1,68 +1,81 @@
 ﻿@model IEnumerable<BelbimEnv.Models.Server>
 
 @{
-    ViewData["Title"] = "Sunucu Paneli";
+    ViewData["Title"] = "Envater Paneli";
 }
 
-<!-- CSV YÜKLEME MODAL PENCERESİ (Mevcut kodunuzdaki gibi kalıyor) -->
-<div class="modal fade" id="csvUploadModal" tabindex="-1" aria-labelledby="csvUploadModalLabel" aria-hidden="true">
+<!-- ========================================================== -->
+<!-- === MODERN EXCEL YÜKLEME MODAL PENCERESİ BAŞLANGIÇ === -->
+<!-- ========================================================== -->
+<div class="modal fade" id="excelUploadModal" tabindex="-1" aria-labelledby="excelUploadModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <form asp-controller="Servers" asp-action="ImportCsv" method="post" enctype="multipart/form-data">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="csvUploadModalLabel"><i class="fas fa-file-csv me-2"></i>Sunucu Verilerini CSV ile Yükle</h5>
+            <form asp-controller="Servers" asp-action="ImportExcel" method="post" enctype="multipart/form-data">
+                <div class="modal-header border-0">
+                    <h5 class="modal-title" id="excelUploadModalLabel"><i class="fas fa-file-excel text-success me-2"></i>Excel ile Veri Yükle</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <p class="text-muted small">Sadece ana sunucu verilerini yükler. Port detayları için her sunucunun kendi yönetim sayfasını kullanın.</p>
-                    <div class="mb-3">
-                        <label for="file" class="form-label">CSV Dosyası:</label>
-                        <input type="file" name="file" class="form-control" required accept=".csv" />
+                    <div class="mb-4">
+                        <label for="fileInput" id="drop-area" class="form-label text-center p-4 border-2 border-dashed rounded cursor-pointer">
+                            <i class="fas fa-cloud-arrow-up fs-1 text-secondary mb-2"></i>
+                            <p class="mb-0">Dosyanızı buraya sürükleyin</p>
+                            <small class="text-muted">veya seçmek için tıklayın (.xlsx)</small>
+                        </label>
+                        <input type="file" name="file" id="fileInput" class="d-none" required accept=".xlsx" />
+                        <div id="file-name-display" class="mt-2 text-center text-muted small"></div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Yükleme Seçeneği:</label>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="importOption" id="optionAppend" value="append" checked>
-                            <label class="form-check-label" for="optionAppend">Mevcut verilerin üzerine ekle</label>
-                        </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="importOption" id="optionReplace" value="replace">
-                            <label class="form-check-label" for="optionReplace">Tüm verileri sil ve bunları ekle (Sıfırla)</label>
+                    <div>
+                        <h6 class="mb-3">Yükleme Yöntemi</h6>
+                        <div class="list-group">
+                            <label class="list-group-item d-flex gap-3">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="importOption" value="append" checked>
+                                <div>
+                                    <strong class="d-block">Üzerine Ekle</strong>
+                                    <small class="text-muted">Mevcut kayıtlara yeni verileri ekler.</small>
+                                </div>
+                            </label>
+                            <label class="list-group-item d-flex gap-3">
+                                <input class="form-check-input flex-shrink-0" type="radio" name="importOption" value="replace">
+                                <div>
+                                    <strong class="d-block text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Tümünü Değiştir (Sıfırla)</strong>
+                                    <small class="text-muted">Tüm mevcut Envater  ve port kayıtlarını siler.</small>
+                                </div>
+                            </label>
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer border-0">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-upload me-1"></i> Yükle</button>
+                    <button type="submit" id="uploadButton" class="btn btn-primary" disabled><i class="fas fa-upload me-1"></i> Yükle</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
-<!-- ============================================= -->
-<!-- === BAŞLIK VE BUTONLAR BÖLÜMÜ (GÜNCELLENDİ) === -->
-<!-- ============================================= -->
+<!-- ========================================================== -->
+<!-- === MODERN EXCEL YÜKLEME MODAL PENCERESİ BİTİŞ === -->
+<!-- ========================================================== -->
+<!-- Sayfa Başlığı, Arama ve Butonlar -->
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3 class="text-primary"><i class="fas fa-server me-2"></i>@ViewData["Title"]</h3>
     <div>
-        <!-- ARAMA KUTUSU BURAYA EKLENDİ -->
         <div class="input-group d-inline-flex" style="width: 350px;">
             <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" id="serverSearchInput" class="form-control" placeholder="Sunucu bilgilerinde ara...">
+            <input type="text" id="serverSearchInput" class="form-control" placeholder="Envater  bilgilerinde ara...">
         </div>
-        <!-- Mevcut Butonlar -->
-        <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#csvUploadModal">
-            <i class="fas fa-file-csv me-1"></i> CSV ile Yükle
+        <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#excelUploadModal">
+            <i class="fas fa-file-excel me-1"></i> Excel ile Yükle
         </button>
         <a asp-action="Create" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Yeni Sunucu Ekle
+            <i class="fas fa-plus me-1"></i> Yeni Envater Ekle
         </a>
     </div>
 </div>
 
-
-<!-- ANA SAYFA KARTI -->
+<!-- ========================================================== -->
+<!-- === EKSİK OLAN VE GERİ EKLENEN SUNUCU TABLOSU === -->
+<!-- ========================================================== -->
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="table-responsive">
@@ -70,15 +83,10 @@
                 <thead class="table-dark">
                     <tr><th>ID</th><th>Host DNS</th><th>IP Adresi</th><th>Model</th><th>Service Tag</th><th>Lokasyon</th><th class="text-end">İşlemler</th></tr>
                 </thead>
-                <!-- Arama için tbody'ye ID eklendi -->
                 <tbody id="serverTableBody">
                     @if (Model == null || !Model.Any())
                     {
-                        <tr>
-                            <td colspan="7" class="text-center py-4">
-                                <p class="text-muted">Henüz hiç sunucu kaydı bulunmuyor.</p>
-                            </td>
-                        </tr>
+                        <tr><td colspan="7" class="text-center py-4"><p class="text-muted">Henüz hiç Envater kaydı bulunmuyor.</p></td></tr>
                     }
                     else
                     {
@@ -102,41 +110,84 @@
                     }
                 </tbody>
             </table>
-            <!-- Arama sonucu bulunamadığında gösterilecek mesaj -->
-            <p id="serverNoResultsMessage" class="text-center text-muted" style="display: none;">Arama kriterlerinize uygun sunucu bulunamadı.</p>
+            <p id="serverNoResultsMessage" class="text-center text-muted" style="display: none;">Arama kriterlerinize uygun Envater bulunamadı.</p>
         </div>
     </div>
 </div>
 
 @section Scripts {
+    <!-- Arama scripti -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const searchInput = document.getElementById('serverSearchInput');
             const tableBody = document.getElementById('serverTableBody');
-            const rows = tableBody.getElementsByTagName('tr');
-            const noResultsMessage = document.getElementById('serverNoResultsMessage');
-
-            searchInput.addEventListener('keyup', function() {
-                const filterText = searchInput.value.toLowerCase();
-                let visibleRowCount = 0;
-
-                for (let i = 0; i < rows.length; i++) {
-                    const row = rows[i];
-
-                    // Tüm satırın metin içeriğini alıp küçük harfe çeviriyoruz
-                    const rowText = row.textContent.toLowerCase();
-
-                    if (rowText.includes(filterText))
-                    {
-                        row.style.display = "";
-                        visibleRowCount++;
-                    } else {
-                        row.style.display = "none";
+            if (tableBody) { // Null kontrolü
+                const rows = tableBody.getElementsByTagName('tr');
+                const noResultsMessage = document.getElementById('serverNoResultsMessage');
+                searchInput.addEventListener('keyup', function() {
+                    const filterText = searchInput.value.toLowerCase();
+                    let visibleRowCount = 0;
+                    for (let i = 0; i < rows.length; i++) {
+                        const rowText = rows[i].textContent.toLowerCase();
+                        if (rowText.includes(filterText)) {
+                            rows[i].style.display = "";
+                            visibleRowCount++;
+                        } else {
+                            rows[i].style.display = "none";
+                        }
                     }
-                }
+                    if (noResultsMessage) {
+                        noResultsMessage.style.display = (visibleRowCount === 0) ? "block" : "none";
+                    }
+                });
+            }
+        });
+    </script>
 
-                noResultsMessage.style.display = (visibleRowCount === 0) ? "block" : "none";
+    <!-- Modal için JavaScript -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const dropArea = document.getElementById('drop-area');
+            const fileInput = document.getElementById('fileInput');
+            const fileNameDisplay = document.getElementById('file-name-display');
+            const uploadButton = document.getElementById('uploadButton');
+
+            dropArea.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', function() {
+                if (this.files.length > 0) {
+                    fileNameDisplay.textContent = `Seçilen dosya: ${this.files[0].name}`;
+                    uploadButton.disabled = false;
+                } else {
+                    fileNameDisplay.textContent = '';
+                    uploadButton.disabled = true;
+                }
+            });
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, preventDefaults, false));
+            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+            ['dragenter', 'dragover'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.add('highlight'), false));
+            ['dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.remove('highlight'), false));
+
+            dropArea.addEventListener('drop', function(e) {
+                fileInput.files = e.dataTransfer.files;
+                fileInput.dispatchEvent(new Event('change'));
             });
         });
     </script>
+
+    <!-- Modal için CSS -->
+    <style>
+        .border-dashed {
+            border-style: dashed !important;
+        }
+
+        .cursor-pointer {
+            cursor: pointer;
+        }
+
+        #drop-area.highlight {
+            border-color: var(--bs-primary);
+            background-color: var(--bs-light);
+        }
+    </style>
 }
