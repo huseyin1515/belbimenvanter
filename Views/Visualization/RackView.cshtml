@@ -1,0 +1,246 @@
+﻿@model BelbimEnv.Models.RackVisualizationViewModel
+
+@{
+    ViewData["Title"] = "Kabin Görünümü";
+    var colorMap = new Dictionary<string, string>();
+    var colors = new List<string> { "#0d6efd", "#6f42c1", "#198754", "#dc3545", "#fd7e14", "#20c997", "#6c757d" };
+    int colorIndex = 0;
+    var highlightedServerId = Context.Request.Query["highlight"];
+}
+
+<!-- LOKASYON SEÇİM MENÜSÜ -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3><i class="fas fa-th me-2"></i>@ViewData["Title"]: <span class="text-primary">@Model.SelectedLocation</span></h3>
+    <div class="dropdown">
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="locationDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+            Lokasyon Değiştir
+        </button>
+        <ul class="dropdown-menu" aria-labelledby="locationDropdown">
+            @foreach (var loc in Model.AllLocations)
+            {
+                <li><a class="dropdown-item @(loc == Model.SelectedLocation ? "active" : "")" asp-action="RackView" asp-route-location="@loc">@loc</a></li>
+            }
+        </ul>
+    </div>
+</div>
+
+<!-- KABİN GÖRSELLEŞTİRME ALANI -->
+<div class="rack-container">
+    @if (!Model.Racks.Any())
+    {
+        <div class="alert alert-warning">Seçili lokasyonda gösterilecek kabin verisi bulunamadı.</div>
+    }
+
+    @foreach (var rack in Model.Racks)
+    {
+        <div class="rack-wrapper">
+            <div class="rack-header">@rack.Key</div>
+            <div class="rack">
+                <div class="rack-side left">@for (int i = 42; i >= 1; i--) {
+                <div class="u-hole">@i</div>
+            }
+</div>
+            <div class="rack-middle">
+                <div class="rack-units">
+                    @{
+                        var sortedUnits = rack.Value.OrderByDescending(u => u.U_Number).ToList();
+                    }
+                    @for (int i = 0; i < sortedUnits.Count; i++)
+                    {
+                        var unit = sortedUnits[i];
+                        if (unit.IsOccupied)
+                        {
+                            var server = unit.OccupyingServer;
+                            int uSpan = rack.Value.Count(u => u.IsOccupied && u.OccupyingServer.Id == server.Id);
+                            int height = (uSpan * 20) - 2;
+
+                            if (!colorMap.ContainsKey(server.Model)) { colorMap[server.Model] = colors[colorIndex++ % colors.Count]; }
+                            string serverColor = colorMap[server.Model];
+
+                            <div class="server-block @(server.Id.ToString() == highlightedServerId ? "highlight-target" : "")"
+                                 id="server-@server.Id"
+                                 style="height: @(height)px; background-color: @serverColor;"
+                                 data-bs-toggle="tooltip" data-bs-placement="right" data-bs-html="true"
+                                 title="<strong>@server.HostDns</strong><br>Model: @server.Model<br>U Aralığı: @server.KabinU">
+                                <a asp-controller="Servers" asp-action="Details" asp-route-id="@server.Id" class="server-link">
+                                    <span class="server-name">@server.HostDns</span>
+                                    <span class="server-u">@server.KabinU</span>
+                                </a>
+                            </div>
+
+                            i += (uSpan - 1);
+                        }
+                        else
+                        {
+                            <div class="empty-unit"></div>
+                        }
+                    }
+                </div>
+            </div>
+            <div class="rack-side right">@for (int i = 42; i >= 1; i--) {
+            <div class="u-hole">@i</div>
+                        }
+</div>
+        </div>
+    </div>
+        }
+</div>
+
+@section Scripts {
+    <script>
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+
+        document.addEventListener("DOMContentLoaded", function() {
+            const highlightedElement = document.querySelector('.highlight-target');
+            if (highlightedElement) {
+                highlightedElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                highlightedElement.classList.add('flash');
+            }
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .rack-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 40px;
+            justify-content: center;
+        }
+
+        .rack-wrapper {
+            display: flex;
+            flex-direction: column;
+            width: 320px;
+        }
+
+        .rack-header {
+            background-color: #343a40;
+            color: white;
+            padding: 8px 10px;
+            font-weight: bold;
+            text-align: center;
+            border-top-left-radius: 5px;
+            border-top-right-radius: 5px;
+        }
+
+        .rack {
+            display: flex;
+            flex-grow: 1;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+        }
+
+        .rack-side {
+            background-color: #495057;
+            padding: 5px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .u-hole {
+            width: 25px;
+            height: 18px;
+            margin-bottom: 2px;
+            color: #adb5bd;
+            font-size: 10px;
+            text-align: center;
+            border-top: 1px solid #6c757d;
+            border-bottom: 1px solid #6c757d;
+        }
+
+        .rack-middle {
+            flex-grow: 1;
+        }
+
+        .rack-units {
+            padding: 5px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .empty-unit, .server-block {
+            margin-bottom: 2px;
+            box-sizing: border-box;
+        }
+
+        .empty-unit {
+            height: 18px;
+            background-image: linear-gradient(45deg, #e9ecef 25%, #dee2e6 25%, #dee2e6 50%, #e9ecef 50%, #e9ecef 75%, #dee2e6 75%, #dee2e6 100%);
+            background-size: 10px 10px;
+        }
+
+        .server-block {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(0,0,0,0.2);
+            border-radius: 3px;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .server-link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            padding: 0 8px;
+            color: white;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+            .server-link:hover {
+                background-color: rgba(0,0,0,0.2);
+            }
+
+        .server-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .server-u {
+            background-color: rgba(0,0,0,0.3);
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        /* YENİ VE DAHA BELİRGİN ANİMASYON */
+        .server-block.flash {
+            animation: pulse-border 2s 2;
+        }
+
+        @@keyframes pulse-border {
+            0% {
+                transform: scale(1);
+                outline: 3px solid rgba(255, 204, 0, 0.9);
+                outline-offset: 2px;
+            }
+
+            50% {
+                transform: scale(1.02);
+                outline: 3px solid rgba(255, 204, 0, 0.3);
+                outline-offset: 8px;
+            }
+
+            100% {
+                transform: scale(1);
+                outline: 3px solid rgba(255, 204, 0, 0.9);
+                outline-offset: 2px;
+            }
+        }
+    </style>
+}

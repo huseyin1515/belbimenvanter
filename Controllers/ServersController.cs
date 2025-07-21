@@ -8,8 +8,8 @@ using System.Linq;
 using System;
 using Microsoft.AspNetCore.Http;
 using System.IO;
-using ExcelDataReader; // Excel okumak için eklendi
-using System.Data;     // DataTable kullanmak için eklendi
+using ExcelDataReader;
+using System.Data;
 
 namespace BelbimEnv.Controllers
 {
@@ -17,10 +17,6 @@ namespace BelbimEnv.Controllers
     {
         private readonly ApplicationDbContext _context;
         public ServersController(ApplicationDbContext context) { _context = context; }
-
-        //==================================================================
-        // MEVCUT CRUD METOTLARI
-        //==================================================================
 
         public async Task<IActionResult> Index()
         {
@@ -113,11 +109,8 @@ namespace BelbimEnv.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // ====================================================================
-        // === EXCEL (.xlsx) YÜKLEME METODU (TAMAMEN YENİDEN YAZILDI) ===
-        // ====================================================================
-
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ImportExcel(IFormFile file, string importOption)
         {
             if (file == null || file.Length == 0)
@@ -151,7 +144,7 @@ namespace BelbimEnv.Controllers
 
                         foreach (DataRow row in dataTable.Rows)
                         {
-                            if (row["Host DNS"] == null || string.IsNullOrEmpty(row["Host DNS"].ToString()))
+                            if (!row.Table.Columns.Contains("Host DNS") || row["Host DNS"] == null || string.IsNullOrEmpty(row["Host DNS"].ToString()))
                             {
                                 continue;
                             }
@@ -159,18 +152,22 @@ namespace BelbimEnv.Controllers
                             var server = new Server
                             {
                                 HostDns = row["Host DNS"]?.ToString(),
-                                IpAdress = row["IP Adress"]?.ToString(),
-                                Model = row["Model"]?.ToString(),
-                                ServiceTag = row["Service Tag / Serial Number"]?.ToString(),
-                                VcenterAdress = row["Vcenter Adress"]?.ToString(),
-                                Cluster = row["Cluster"]?.ToString(),
-                                Location = row["Location"]?.ToString(),
-                                OS = row["o/s"]?.ToString(),
-                                IloIdracIp = row["ilo/idrac ip"]?.ToString(),
-                                Kabin = row["KABİN"]?.ToString(),
-                                RearFront = row["Rear/Front"]?.ToString(),
-                                KabinU = int.TryParse(row["KABİN U"]?.ToString(), out int kabinU) ? kabinU : null,
-                                IsttelkomEtiketId = row["İsttelkom Etiket ID"]?.ToString(),
+                                IpAdress = row.Table.Columns.Contains("IP Adress") ? row["IP Adress"]?.ToString() : null,
+                                Model = row.Table.Columns.Contains("Model") ? row["Model"]?.ToString() : null,
+                                ServiceTag = row.Table.Columns.Contains("Service Tag / Serial Number") ? row["Service Tag / Serial Number"]?.ToString() : null,
+                                VcenterAdress = row.Table.Columns.Contains("Vcenter Adress") ? row["Vcenter Adress"]?.ToString() : null,
+                                Cluster = row.Table.Columns.Contains("Cluster") ? row["Cluster"]?.ToString() : null,
+                                Location = row.Table.Columns.Contains("Location") ? row["Location"]?.ToString() : null,
+                                OS = row.Table.Columns.Contains("o/s") ? row["o/s"]?.ToString() : null,
+                                IloIdracIp = row.Table.Columns.Contains("ilo/idrac ip") ? row["ilo/idrac ip"]?.ToString() : null,
+
+                                // DÜZELTME: Doğru sütunlar doğru özelliklere atanıyor.
+                                Kabin = row.Table.Columns.Contains("_akabin") ? row["_akabin"]?.ToString() : null,
+                                KabinU = row.Table.Columns.Contains("kabin_u") ? row["kabin_u"]?.ToString() : null,
+
+                                RearFront = row.Table.Columns.Contains("Rear/Front") ? row["Rear/Front"]?.ToString() : null,
+                                IsttelkomEtiketId = row.Table.Columns.Contains("İsttelkom Etiket I") ? row["İsttelkom Etiket I"]?.ToString() : null,
+
                                 DateAdded = DateTime.Now,
                                 LastUpdated = DateTime.Now
                             };

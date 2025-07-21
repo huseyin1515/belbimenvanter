@@ -1,104 +1,105 @@
-﻿@model BelbimEnv.Models.PortCreateBulkViewModel
-@using BelbimEnv.Models
+﻿@model BelbimEnv.Models.Server
 
 @{
-    ViewData["Title"] = "Toplu Port Ekle";
+    ViewData["Title"] = "Yeni Sunucu Ekle";
 }
 
 <h4><i class="fas fa-plus-circle text-success me-2"></i>@ViewData["Title"]</h4>
-<h6 class="text-muted">@Model.ServerName sunucusuna yeni portlar ekleniyor.</h6>
 <hr />
 
-<!-- Adet Belirleme Alanı -->
-<div class="row align-items-end g-3 mb-4 p-3 border-dashed rounded">
-    <div class="col-md-3">
-        <label for="portCount" class="form-label fw-bold">Kaç adet port eklenecek?</label>
-        <input type="number" id="portCount" class="form-control" value="1" min="1" max="50">
-    </div>
-    <div class="col-md-3">
-        <button type="button" id="generateRowsBtn" class="btn btn-info"><i class="fas fa-cogs me-1"></i>Satırları Oluştur</button>
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <h5 class="mt-2">Temel Kimlik Bilgileri</h5>
+            <hr class="mt-1" />
+            <div class="row g-3">
+                <div class="form-group col-md-6">
+                    <label asp-for="HostDns" class="control-label"></label>
+                    <input asp-for="HostDns" class="form-control" />
+                    <span asp-validation-for="HostDns" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="IpAdress" class="control-label"></label>
+                    <input asp-for="IpAdress" class="form-control" />
+                    <span asp-validation-for="IpAdress" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="Model" class="control-label"></label>
+                    <input asp-for="Model" class="form-control" />
+                    <span asp-validation-for="Model" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="ServiceTag" class="control-label"></label>
+                    <input asp-for="ServiceTag" class="form-control" />
+                    <span asp-validation-for="ServiceTag" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="IsttelkomEtiketId" class="control-label"></label>
+                    <input asp-for="IsttelkomEtiketId" class="form-control" />
+                    <span asp-validation-for="IsttelkomEtiketId" class="text-danger"></span>
+                </div>
+            </div>
+
+            <h5 class="mt-4">Yazılım ve Sanallaştırma</h5>
+            <hr class="mt-1" />
+            <div class="row g-3">
+                <div class="form-group col-md-4">
+                    <label asp-for="OS" class="control-label"></label>
+                    <input asp-for="OS" class="form-control" />
+                    <span asp-validation-for="OS" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-4">
+                    <label asp-for="VcenterAdress" class="control-label"></label>
+                    <input asp-for="VcenterAdress" class="form-control" />
+                    <span asp-validation-for="VcenterAdress" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-4">
+                    <label asp-for="Cluster" class="control-label"></label>
+                    <input asp-for="Cluster" class="form-control" />
+                    <span asp-validation-for="Cluster" class="text-danger"></span>
+                </div>
+            </div>
+
+            <h5 class="mt-4">Fiziksel Konum</h5>
+            <hr class="mt-1" />
+            <div class="row g-3">
+                <div class="form-group col-md-6">
+                    <label asp-for="Location" class="control-label"></label>
+                    <input asp-for="Location" class="form-control" />
+                    <span asp-validation-for="Location" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-6">
+                    <label asp-for="IloIdracIp" class="control-label"></label>
+                    <input asp-for="IloIdracIp" class="form-control" />
+                    <span asp-validation-for="IloIdracIp" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-4">
+                    <label asp-for="Kabin" class="control-label"></label>
+                    <input asp-for="Kabin" class="form-control" placeholder="Örn: 104" />
+                    <span asp-validation-for="Kabin" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-4">
+                    <label asp-for="KabinU" class="control-label"></label>
+                    <input asp-for="KabinU" class="form-control" placeholder="Örn: 37-41 veya 9" />
+                    <span asp-validation-for="KabinU" class="text-danger"></span>
+                </div>
+                <div class="form-group col-md-4">
+                    <label asp-for="RearFront" class="control-label"></label>
+                    <input asp-for="RearFront" class="form-control" placeholder="Örn: F veya R" />
+                    <span asp-validation-for="RearFront" class="text-danger"></span>
+                </div>
+            </div>
+
+            <div class="form-group mt-4">
+                <input type="submit" value="Yeni Sunucu Oluştur" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-outline-secondary">Listeye Dön</a>
+            </div>
+        </form>
     </div>
 </div>
 
-<form asp-action="Create" method="post">
-    <input type="hidden" asp-for="ServerId" />
-    <div id="port-rows-container"></div>
-    <div id="save-button-container" class="form-group mt-4" style="display: none;">
-        <input type="submit" value="Tüm Portları Kaydet" class="btn btn-primary" />
-        <a asp-action="Manage" asp-route-id="@Model.ServerId" class="btn btn-outline-secondary">İptal</a>
-    </div>
-</form>
-
-<!-- JAVASCRIPT İÇİN SATIR ŞABLONU (GÜNCELLENDİ) -->
-<template id="port-row-template">
-    <div class="port-row card mb-3">
-        <div class="card-body">
-            <h6 class="card-title text-primary">Port #{ROW_NUMBER}</h6>
-            <div class="row g-3">
-                <div class="col-12"><label class="form-label">Port Tipi</label><select name="Portlar[{INDEX}].PortTipi" class="form-select port-type-selector" required><option value="">Seçiniz...</option>@foreach(var value in Enum.GetValues(typeof(PortTipiEnum))){
-                <option value="@((int)value)">@Enum.GetName(typeof(PortTipiEnum), value)</option>
-                                }
-</select></div>
-
-                <!-- DİNAMİK ALANLAR -->
-                <div class="col-md-6 dynamic-field fiber-field" style="display:none;"><label class="form-label">Fiber MAC</label><input type="text" name="Portlar[{INDEX}].FiberMAC" class="form-control" /></div>
-                <div class="col-md-6 dynamic-field fc-field" style="display:none;"><label class="form-label">FC Uç Port Sayısı</label><input type="number" name="Portlar[{INDEX}].FcUcPortSayisi" class="form-control" /></div>
-                <div class="col-md-6 dynamic-field bakir-field" style="display:none;"><label class="form-label">Bakır MAC</label><input type="text" name="Portlar[{INDEX}].BakirMAC" class="form-control" /></div>
-                <div class="col-md-6 dynamic-field bakir-field" style="display:none;"><label class="form-label">Bakır Uplink Port</label><input type="text" name="Portlar[{INDEX}].BakirUplinkPort" class="form-control" /></div>
-                <div class="col-md-6 dynamic-field san-field" style="display:none;"><label class="form-label">WWPN</label><input type="text" name="Portlar[{INDEX}].Wwpn" class="form-control" /></div>
-
-                <hr class="my-2" />
-                <!-- ORTAK ALANLAR -->
-                <div class="col-md-3">
-                    <label class="form-label d-block">Link Durumu</label>
-                    <div class="btn-group link-status-group">
-                        <input type="hidden" name="Portlar[{INDEX}].LinkStatus" class="link-status-hidden-input" />
-                        <button type="button" class="btn btn-outline-success btn-sm status-btn" data-status="Up">Up</button>
-                        <button type="button" class="btn btn-outline-danger btn-sm status-btn" data-status="Down">Down</button>
-                    </div>
-                </div>
-                <div class="col-md-3"><label class="form-label">Link Hızı</label><input type="text" name="Portlar[{INDEX}].LinkSpeed" class="form-control" /></div>
-                <div class="col-md-3"><label class="form-label">Switch Adı</label><input type="text" name="Portlar[{INDEX}].SwName" class="form-control" /></div>
-                <div class="col-md-3"><label class="form-label">Switch Port</label><input type="text" name="Portlar[{INDEX}].SwPort" class="form-control" /></div>
-            </div>
-        </div>
-    </div>
-</template>
-
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            const generateBtn = document.getElementById('generateRowsBtn');
-            const container = document.getElementById('port-rows-container');
-            const template = document.getElementById('port-row-template');
-            const portCountInput = document.getElementById('portCount');
-            const saveButtonContainer = document.getElementById('save-button-container');
-
-            generateBtn.addEventListener('click', function() { /* ... satır oluşturma kodu aynı ... */ });
-
-            // Olay delegasyonu ile hem Port Tipi hem de Link Durumu olaylarını yakala
-            container.addEventListener('change', function(e) {
-                if (e.target.classList.contains('port-type-selector')) {
-                    const selectedValue = e.target.value;
-                    const parentRow = e.target.closest('.port-row');
-                    parentRow.querySelectorAll('.dynamic-field').forEach(field => field.style.display = 'none');
-                    if (selectedValue === '@((int)PortTipiEnum.FC)' || selectedValue === '@((int)PortTipiEnum.VirtualFC)') {
-                        parentRow.querySelector('.fiber-field').style.display = 'block';
-                        parentRow.querySelector('.fc-field').style.display = 'block';
-                    } else if (selectedValue === '@((int)PortTipiEnum.Bakir)') {
-                        parentRow.querySelectorAll('.bakir-field').forEach(f => f.style.display = 'block');
-                    } else if (selectedValue === '@((int)PortTipiEnum.SAN)') {
-                        parentRow.querySelector('.san-field').style.display = 'block';
-                    }
-                }
-            });
-
-            container.addEventListener('click', function(e) {
-                if (e.target.classList.contains('status-btn')) {
-                    // ... (link durumu butonlarının click kodu aynı) ...
-                }
-            });
-        });
-    </script>
 }
