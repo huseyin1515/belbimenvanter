@@ -74,27 +74,29 @@
                             <th>Açıklama</th>
                             <th>Link Durumu</th>
                             <th>Switch Adı</th>
-                            <th class="text-center" style="width: 100px;">İşlemler</th>
+                            <th class="text-center" style="width: 120px;">İşlemler</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var port in Model.PortDetaylari.OrderBy(p => p.Id))
                         {
                             <tr>
-                                <td><span class="badge bg-info text-dark">@port.PortTipi</span></td>
+                                <td><span class="badge bg-info text-dark">@port.PortTipi.GetDisplayName()</span></td>
                                 <td>
                                     @if (port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC)
                                     {
                                         <strong>Fiber MAC:</strong> 
                                         @port.FiberMAC
                                     }
-                                    else if (port.PortTipi == PortTipiEnum.Bakir)
+                                    else if (port.PortTipi == PortTipiEnum.Bakir || port.PortTipi == PortTipiEnum.VirtualBakir)
                                     {
+
                                         <strong>Bakır MAC:</strong> 
                                         @port.BakirMAC
                                     }
                                     else if (port.PortTipi == PortTipiEnum.SAN)
                                     {
+
                                         <strong>WWPN:</strong> 
                                         @port.Wwpn
                                     }
@@ -107,17 +109,24 @@
                                     }
                                     else if (port.LinkStatus?.ToLower() == "down")
                                     {
+
                                         <span class="badge bg-danger">Down</span>
                                     }
                                     else
                                     {
+
                                         <span class="badge bg-secondary">@port.LinkStatus</span>
                                     }
                                 </td>
                                 <td>@port.SwName</td>
-                                <td class="text-center">
+                                <td class="text-center text-nowrap">
+                                    <!-- YENİ EKLENEN DETAY BUTONU -->
+                                    <a asp-controller="PortDetaylari" asp-action="Details" asp-route-id="@port.Id" class="btn btn-sm btn-outline-info" title="Port Detayları"><i class="fas fa-info-circle"></i></a>
+
                                     <a asp-controller="PortDetaylari" asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
-                                    <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');"><button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button></form>
+                                    <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button>
+                                    </form>
                                 </td>
                             </tr>
                         }

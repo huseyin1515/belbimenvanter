@@ -2,8 +2,14 @@
 using BelbimEnv.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using ExcelDataReader;
+using Microsoft.AspNetCore.Http;
 
 namespace BelbimEnv.Controllers
 {
@@ -16,65 +22,141 @@ namespace BelbimEnv.Controllers
             _context = context;
         }
 
-        //==================================================================
-        // YARDIMCI METOT: Açıklama metnini oluşturur.
-        //==================================================================
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ImportExcel(IFormFile file, string importOption)
+        {
+            if (file == null || file.Length == 0)
+            {
+                TempData["ErrorMessage"] = "Lütfen bir Excel (.xlsx) dosyası seçin.";
+                return RedirectToAction(nameof(ListAll));
+            }
+
+            System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
+            var portsToImport = new List<PortDetay>();
+            var notFoundServiceTags = new List<string>();
+
+            try
+            {
+                using (var stream = new MemoryStream())
+                {
+                    await file.CopyToAsync(stream);
+                    using (var reader = ExcelReaderFactory.CreateReader(stream))
+                    {
+                        var result = reader.AsDataSet(new ExcelDataSetConfiguration() { ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = true } });
+                        DataTable dataTable = result.Tables[0];
+
+                        var allServers = await _context.Servers.ToListAsync();
+                        var serversDict = allServers
+                            .Where(s => !string.IsNullOrEmpty(s.ServiceTag))
+                            .GroupBy(s => s.ServiceTag)
+                            .ToDictionary(g => g.Key, g => g.First());
+
+                        foreach (DataRow row in dataTable.Rows)
+                        {
+                            string serviceTag = row.Table.Columns.Contains("Device Service Tag") ? row["Device Service Tag"]?.ToString() : null;
+                            if (string.IsNullOrEmpty(serviceTag)) continue;
+
+                            if (serversDict.TryGetValue(serviceTag, out Server server))
+                            {
+                                PortTipiEnum portTipi = default;
+                                string turuStr = row.Table.Columns.Contains("Türü") ? row["Türü"]?.ToString() : "";
+                                if (!string.IsNullOrEmpty(turuStr))
+                                {
+                                    Enum.TryParse<PortTipiEnum>(turuStr.Replace(" ", ""), true, out portTipi);
+                                }
+                                if (portTipi == default(PortTipiEnum)) continue;
+
+                                var port = new PortDetay
+                                {
+                                    ServerId = server.Id,
+                                    PortTipi = portTipi,
+                                    LinkStatus = row.Table.Columns.Contains("Link Status") ? row["Link Status"]?.ToString() : null,
+                                    LinkSpeed = row.Table.Columns.Contains("Link Speed") ? row["Link Speed"]?.ToString() : null,
+                                    PortId = row.Table.Columns.Contains("Port ID") ? row["Port ID"]?.ToString() : null,
+                                    NicId = row.Table.Columns.Contains("NIC ID") ? row["NIC ID"]?.ToString() : null,
+                                    FiberMAC = row.Table.Columns.Contains("Fiber MAC") ? row["Fiber MAC"]?.ToString() : null,
+                                    BakirMAC = row.Table.Columns.Contains("Bakır MAC") ? row["Bakır MAC"]?.ToString() : null,
+                                    Wwpn = row.Table.Columns.Contains("WWPN") ? row["WWPN"]?.ToString() : null,
+                                    SwName = row.Table.Columns.Contains("SW NAME") ? row["SW NAME"]?.ToString() : null,
+                                    SwPort = row.Table.Columns.Contains("SW PORT") ? row["SW PORT"]?.ToString() : null,
+                                    SwdeUcMi = row.Table.Columns.Contains("Swde Up Mı?") ? row["Swde Up Mı?"]?.ToString() : null,
+                                    FcUcPortSayisi = row.Table.Columns.Contains("FC_Up Port Sayısı") && int.TryParse(row["FC_Up Port Sayısı"]?.ToString(), out int fcCount) ? fcCount : null,
+                                    BakirUplinkPort = row.Table.Columns.Contains("BakırUpPort") ? row["BakırUpPort"]?.ToString() : null,
+                                    UcPort = row.Table.Columns.Contains("Up Port") ? row["Up Port"]?.ToString() : null
+                                };
+
+                                port.Aciklama = GeneratePortDescription(port, server);
+                                portsToImport.Add(port);
+                            }
+                            else if (!notFoundServiceTags.Contains(serviceTag))
+                            {
+                                notFoundServiceTags.Add(serviceTag);
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Excel dosyası okunurken hata: {ex.Message}.";
+                return RedirectToAction(nameof(ListAll));
+            }
+
+            try
+            {
+                if (importOption == "replace") { _context.PortDetaylari.RemoveRange(_context.PortDetaylari); }
+                await _context.PortDetaylari.AddRangeAsync(portsToImport);
+                await _context.SaveChangesAsync();
+
+                string successMessage = $"{portsToImport.Count} port başarıyla yüklendi.";
+                if (notFoundServiceTags.Any()) { TempData["WarningMessage"] = $"{successMessage} Ancak şu Service Tag'lere sahip sunucular bulunamadığı için bu portlar atlandı: {string.Join(", ", notFoundServiceTags)}"; }
+                else { TempData["SuccessMessage"] = successMessage; }
+            }
+            catch (Exception ex) { TempData["ErrorMessage"] = $"Veritabanına kayıt sırasında hata: {ex.Message}"; }
+            return RedirectToAction(nameof(ListAll));
+        }
+
         private string GeneratePortDescription(PortDetay port, Server server)
         {
             string deviceName = server.HostDns ?? "UnknownServer";
             string macAddress = "";
-            if (port.PortTipi == PortTipiEnum.Bakir) macAddress = port.BakirMAC;
+
+            if (port.PortTipi == PortTipiEnum.Bakir || port.PortTipi == PortTipiEnum.VirtualBakir) macAddress = port.BakirMAC;
             else if (port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC) macAddress = port.FiberMAC;
             else if (port.PortTipi == PortTipiEnum.SAN) macAddress = port.Wwpn;
+
             string lastFourDigits = "XXXX";
             if (!string.IsNullOrEmpty(macAddress))
             {
                 string cleanMac = new string(macAddress.Where(char.IsLetterOrDigit).ToArray());
                 if (cleanMac.Length >= 4) { lastFourDigits = new string(cleanMac.TakeLast(4).ToArray()).ToUpper(); }
             }
+
             string typeInitial = port.PortTipi.ToString().ToUpper().FirstOrDefault().ToString();
+
             string countInfo = "0";
-            if (port.PortTipi == PortTipiEnum.Bakir && !string.IsNullOrEmpty(port.BakirUplinkPort)) { countInfo = port.BakirUplinkPort; }
+            if ((port.PortTipi == PortTipiEnum.Bakir || port.PortTipi == PortTipiEnum.VirtualBakir) && !string.IsNullOrEmpty(port.BakirUplinkPort)) { countInfo = port.BakirUplinkPort; }
             else if ((port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC) && port.FcUcPortSayisi.HasValue) { countInfo = port.FcUcPortSayisi.Value.ToString(); }
+
             return $"{deviceName}_{lastFourDigits}_{typeInitial}_{countInfo}";
         }
 
-        //==================================================================
-        // YENİ EKLENEN METOT: Bir portun tüm detaylarını gösterir.
-        //==================================================================
-        // GET: /PortDetaylari/Details/15
+
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-            var portDetay = await _context.PortDetaylari
-                .Include(p => p.Server) // Ait olduğu sunucu bilgisini de getir
-                .AsNoTracking()
-                .FirstOrDefaultAsync(m => m.Id == id);
-
-            if (portDetay == null)
-            {
-                return NotFound();
-            }
-
+            if (id == null) return NotFound();
+            var portDetay = await _context.PortDetaylari.Include(p => p.Server).AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
+            if (portDetay == null) return NotFound();
             return View(portDetay);
         }
 
-        //==================================================================
-        // MEVCUT METOTLAR
-        //==================================================================
-
-        // GET: /PortDetaylari/ListAll
         public async Task<IActionResult> ListAll()
         {
             var allPorts = await _context.PortDetaylari.Include(p => p.Server).AsNoTracking().OrderByDescending(p => p.Id).ToListAsync();
             return View(allPorts);
         }
 
-        // GET: /PortDetaylari/Manage/5
         public async Task<IActionResult> Manage(int? id)
         {
             if (id == null) return NotFound("Sunucu ID'si belirtilmedi.");
@@ -93,7 +175,6 @@ namespace BelbimEnv.Controllers
             return View(viewModel);
         }
 
-        // GET: /PortDetaylari/Create?serverId=5
         public async Task<IActionResult> Create(int serverId)
         {
             var server = await _context.Servers.AsNoTracking().FirstOrDefaultAsync(s => s.Id == serverId);
@@ -102,7 +183,6 @@ namespace BelbimEnv.Controllers
             return View(viewModel);
         }
 
-        // POST: /PortDetaylari/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(PortCreateBulkViewModel viewModel)
@@ -127,7 +207,6 @@ namespace BelbimEnv.Controllers
             return RedirectToAction(nameof(Manage), new { id = viewModel.ServerId });
         }
 
-        // GET: /PortDetaylari/Edit/15
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -136,7 +215,6 @@ namespace BelbimEnv.Controllers
             return View(portDetay);
         }
 
-        // POST: /PortDetaylari/Edit/15
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, PortDetay portDetayFromForm)
@@ -163,7 +241,6 @@ namespace BelbimEnv.Controllers
             return View(portDetayFromForm);
         }
 
-        // POST: /PortDetaylari/Delete/15
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Delete(int id)

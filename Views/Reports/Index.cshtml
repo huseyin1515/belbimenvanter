@@ -1,0 +1,167 @@
+﻿@model BelbimEnv.Models.OverallReportViewModel
+
+@{
+    ViewData["Title"] = "Raporlama Paneli";
+}
+
+<h3 class="mb-4"><i class="fas fa-chart-line me-2"></i>@ViewData["Title"]</h3>
+
+<!-- 1. BÖLÜM: GELİŞTİRİLMİŞ İSTATİSTİK KARTLARI -->
+<div class="row g-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card text-white bg-primary shadow h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <i class="fas fa-server fa-3x"></i>
+                    <div class="text-end">
+                        <div class="display-4">@Model.TotalServers</div>
+                        <div class="small">Toplam Sunucu</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-3 col-md-6">
+        <div class="card text-white bg-secondary shadow h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <i class="fas fa-network-wired fa-3x"></i>
+                    <div class="text-end">
+                        <div class="display-4">@Model.TotalPorts</div>
+                        <div class="small">Toplam Port</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6 col-md-12">
+        <div class="card shadow h-100">
+            <div class="card-body">
+                <h6 class="card-title text-muted">Genel Port Aktiflik Oranı</h6>
+                <div class="progress mt-3" style="height: 30px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: @Model.OverallUpPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"
+                         aria-valuenow="@Model.OverallUpPercentage" aria-valuemin="0" aria-valuemax="100">
+                        <strong class="fs-6">%@Model.OverallUpPercentage.ToString("0") Aktif</strong>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between mt-2 small text-muted">
+                    <span><i class="fas fa-check-circle text-success"></i> @Model.TotalUpPorts Up</span>
+                    <span><i class="fas fa-times-circle text-danger"></i> @Model.TotalDownPorts Down</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. BÖLÜM: GRAFİKLER (YENİLER EKLENDİ) -->
+<div class="row g-4 mt-3">
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-pie-chart me-2 text-info"></i>Port Durum Dağılımı</h5>
+                <canvas id="portStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-tags me-2 text-warning"></i>Port Tiplerine Göre Dağılım</h5>
+                <canvas id="portsByTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-server me-2 text-primary"></i>En Çok Porta Sahip 5 Sunucu</h5>
+                <canvas id="topServersChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. BÖLÜM: SUNUCU BAZLI DETAYLI DÖKÜM -->
+<div class="card shadow-sm mt-4">
+    <div class="card-header"><h5 class="mb-0"><i class="fas fa-list-ul me-2"></i>Sunucu Bazlı Port Durumu</h5></div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover table-sm mb-0">
+                <thead class="table-light">
+                    <tr><th>Sunucu</th><th class="text-center">Toplam Port</th><th class="text-center">Aktif Port</th><th class="text-center">Pasif Port</th><th>Aktiflik Oranı</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.ServerReports)
+                    {
+                        <tr>
+                            <td><a asp-controller="Servers" asp-action="Details" asp-route-id="@r.ServerId">@r.HostDns</a></td>
+                            <td class="text-center">@r.TotalPorts</td>
+                            <td class="text-center text-success fw-bold">@r.UpPorts</td>
+                            <td class="text-center text-danger fw-bold">@r.DownPorts</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar @(r.UpPercentage > 75 ? "bg-success" : (r.UpPercentage > 40 ? "bg-warning" : "bg-danger"))" role="progressbar" style="width: @r.UpPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"
+                                         aria-valuenow="@r.UpPercentage" aria-valuemin="0" aria-valuemax="100">
+                                        %@r.UpPercentage.ToString("0")
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // YENİ GRAFİK: Port Durum Dağılımı (Pasta)
+            new Chart(document.getElementById('portStatusChart').getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: @Json.Serialize(Model.PortStatusDistribution.Keys),
+                    datasets: [{
+                        data: @Json.Serialize(Model.PortStatusDistribution.Values),
+                        backgroundColor: ['#198754', '#dc3545', '#6c757d'],
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'top' } } }
+            });
+
+            // Port Tiplerine Göre Dağılım (Halka)
+            new Chart(document.getElementById('portsByTypeChart').getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: @Json.Serialize(Model.PortsByType.Keys),
+                    datasets: [{
+                        data: @Json.Serialize(Model.PortsByType.Values),
+                        backgroundColor: ['#0d6efd', '#6f42c1', '#d63384', '#fd7e14', '#20c997', '#ffc107'],
+                    }]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'top' } } }
+            });
+
+            // YENİ GRAFİK: En Çok Porta Sahip Sunucular (Yatay Çubuk)
+            new Chart(document.getElementById('topServersChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: @Json.Serialize(Model.TopServersByPortCount.Keys),
+                    datasets: [{
+                        label: 'Port Sayısı',
+                        data: @Json.Serialize(Model.TopServersByPortCount.Values),
+                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                        borderColor: 'rgba(13, 110, 253, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        });
+    </script>
+}

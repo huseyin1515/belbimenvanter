@@ -1,4 +1,5 @@
 ﻿@model BelbimEnv.Models.PortDetay
+@using BelbimEnv.Models
 
 @{
     ViewData["Title"] = "Port Detayı";
@@ -18,7 +19,7 @@
         <hr class="mt-1" />
         <dl class="row">
             <dt class="col-sm-3">Port Tipi</dt>
-            <dd class="col-sm-9"><span class="badge bg-info text-dark fs-6">@Model.PortTipi</span></dd>
+            <dd class="col-sm-9"><span class="badge bg-info text-dark fs-6">@Model.PortTipi.GetDisplayName()</span></dd>
 
             @if (Model.PortTipi == PortTipiEnum.FC || Model.PortTipi == PortTipiEnum.VirtualFC)
             {
@@ -27,7 +28,7 @@
                 <dt class="col-sm-3">FC Uç Port Sayısı</dt>
                 <dd class="col-sm-9">@Model.FcUcPortSayisi</dd>
             }
-            else if (Model.PortTipi == PortTipiEnum.Bakir)
+            else if (Model.PortTipi == PortTipiEnum.Bakir || Model.PortTipi == PortTipiEnum.VirtualBakir)
             {
                 <dt class="col-sm-3">Bakır MAC</dt>
                 <dd class="col-sm-9">@Model.BakirMAC</dd>
@@ -74,6 +75,8 @@
         <h5 class="mt-4"><i class="fas fa-random text-primary me-2"></i>Karşı Uç (Switch) Bilgileri</h5>
         <hr class="mt-1" />
         <dl class="row">
+            <dt class="col-sm-3">Ait Olduğu Sunucu</dt>
+            <dd class="col-sm-9"><a asp-controller="Servers" asp-action="Details" asp-route-id="@Model.ServerId">@Model.Server.HostDns</a></dd>
             <dt class="col-sm-3">Switch Adı</dt>
             <dd class="col-sm-9">@Model.SwName</dd>
             <dt class="col-sm-3">Switch Port</dt>

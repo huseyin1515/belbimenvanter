@@ -10,22 +10,16 @@
 </head>
 <body>
     <header>
-        <!-- DÜZELTME: <nav> etiketi tüm barı sarmalamalı -->
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-4">
             <div class="container-fluid">
-                <!-- MARKA/LOGO BÖLÜMÜ -->
                 <a class="navbar-brand fw-bold text-dark" asp-area="" asp-controller="Servers" asp-action="Index">
                     <i class="fas fa-server text-primary"></i>
                     Kurumsal Envanter
                 </a>
-
-                <!-- MOBİL İÇİN TOGGLE BUTONU -->
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-
-                <!-- MENÜ LİNKLERİNİN OLDUĞU BÖLÜM -->
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
@@ -38,6 +32,14 @@
                                 <i class="fas fa-list-alt me-1"></i>Tüm Portlar
                             </a>
                         </li>
+                        <!-- ============================================= -->
+                        <!-- === YENİ EKLENEN "RAPORLAR" LİNKİ === -->
+                        <!-- ============================================= -->
+                        <li class="nav-item">
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Index">
+                                <i class="fas fa-chart-pie me-1"></i>Raporlar
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -46,7 +48,6 @@
 
     <div class="container-fluid px-4">
         <main role="main" class="pb-3">
-            <!-- Başarı ve Hata mesajları burada kalabilir, doğru yer. -->
             @if (TempData["SuccessMessage"] != null)
             {
                 <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -57,6 +58,12 @@
             {
                 <div class="alert alert-danger alert-dismissible fade show" role="alert">
                     @TempData["ErrorMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+            @if (TempData["WarningMessage"] != null) // Raporlama sayfası için eklendi
+            {
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    @TempData["WarningMessage"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             }
             @RenderBody()
@@ -71,6 +78,12 @@
 
     <script src="~/lib/jquery/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ============================================= -->
+    <!-- === YENİ EKLENEN CHART.JS KÜTÜPHANESİ === -->
+    <!-- ============================================= -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

@@ -14,7 +14,6 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" />
             <input type="hidden" asp-for="ServerId" />
-
             <h5 class="mt-2">Tipe Özel Bilgiler</h5>
             <hr class="mt-1" />
             <div class="row g-3 align-items-end">
@@ -25,18 +24,10 @@
                 <div class="col-md-6 dynamic-field" id="bakirUplinkAlani" style="display:none;"><label asp-for="BakirUplinkPort" class="form-label"></label><input asp-for="BakirUplinkPort" class="form-control" /></div>
                 <div class="col-md-6 dynamic-field" id="sanAlani" style="display:none;"><label asp-for="Wwpn" class="form-label"></label><input asp-for="Wwpn" class="form-control" /></div>
             </div>
-
             <h5 class="mt-4">Ortak Bilgiler</h5>
             <hr class="mt-1" />
             <div class="row g-3">
-                <div class="col-md-6">
-                    <label class="form-label d-block">Link Durumu</label>
-                    <div class="btn-group link-status-group">
-                        <input type="hidden" asp-for="LinkStatus" />
-                        <button type="button" class="btn @(Model.LinkStatus == "Up" ? "btn-success active" : "btn-outline-success") btn-sm status-btn" data-status="Up">Up</button>
-                        <button type="button" class="btn @(Model.LinkStatus == "Down" ? "btn-danger active" : "btn-outline-danger") btn-sm status-btn" data-status="Down">Down</button>
-                    </div>
-                </div>
+                <div class="col-md-6"><label class="form-label d-block">Link Durumu</label><div class="btn-group link-status-group"><input type="hidden" asp-for="LinkStatus" /><button type="button" class="btn @(Model.LinkStatus == "Up" ? "btn-success active" : "btn-outline-success") btn-sm status-btn" data-status="Up">Up</button><button type="button" class="btn @(Model.LinkStatus == "Down" ? "btn-danger active" : "btn-outline-danger") btn-sm status-btn" data-status="Down">Down</button></div></div>
                 <div class="col-md-6"><label asp-for="LinkSpeed" class="form-label"></label><input asp-for="LinkSpeed" class="form-control" /></div>
                 <div class="col-md-6"><label asp-for="PortId" class="form-label"></label><input asp-for="PortId" class="form-control" /></div>
                 <div class="col-md-6"><label asp-for="NicId" class="form-label"></label><input asp-for="NicId" class="form-control" /></div>
@@ -45,10 +36,8 @@
                 <div class="col-md-6"><label asp-for="SwdeUcMi" class="form-label"></label><input asp-for="SwdeUcMi" class="form-control" /></div>
                 <div class="col-md-6"><label asp-for="UcPort" class="form-label"></label><input asp-for="UcPort" class="form-control" /></div>
             </div>
-
             <h5 class="mt-4">Otomatik Oluşturulan Bilgi</h5>
-            <hr class="mt-1" />
-            <div class="row"><div class="col-md-12"><label asp-for="Aciklama" class="form-label"></label><input asp-for="Aciklama" class="form-control" readonly /><div class="form-text">Bu alan, kaydederken otomatik olarak güncellenir.</div></div></div>
+            <hr class="mt-1" /><div class="row"><div class="col-md-12"><label asp-for="Aciklama" class="form-label"></label><input asp-for="Aciklama" class="form-control" readonly /><div class="form-text">Bu alan, kaydederken otomatik olarak güncellenir.</div></div></div>
             <div class="form-group mt-4"><input type="submit" value="Değişiklikleri Kaydet" class="btn btn-primary" /><a asp-controller="Servers" asp-action="Details" asp-route-id="@Model.ServerId" class="btn btn-outline-secondary">İptal</a></div>
         </form>
     </div>
@@ -58,18 +47,24 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Dinamik MAC/WWPN alanları için kod
             const portTipiDropdown = document.getElementById('portTipiSecimi');
-            function updateDynamicFields() { /* ... önceki gibi aynı kod ... */ }
+            function updateDynamicFields() {
+                const secilenTip = portTipiDropdown.value;
+                document.querySelectorAll('.dynamic-field').forEach(field => field.style.display = 'none');
+                if (secilenTip === '@((int)PortTipiEnum.FC)' || secilenTip === '@((int)PortTipiEnum.VirtualFC)') {
+                    document.getElementById('fiberAlani').style.display = 'block';
+                    document.getElementById('fcUcPortAlani').style.display = 'block';
+                } else if (secilenTip === '@((int)PortTipiEnum.Bakir)' || secilenTip === '@((int)PortTipiEnum.VirtualBakir)') {
+                    document.getElementById('bakirAlani').style.display = 'block';
+                    document.getElementById('bakirUplinkAlani').style.display = 'block';
+                } else if (secilenTip === '@((int)PortTipiEnum.SAN)') {
+                    document.getElementById('sanAlani').style.display = 'block';
+                }
+            }
             portTipiDropdown.addEventListener('change', updateDynamicFields);
             updateDynamicFields();
 
-            // Link Durumu butonları için kod
-            document.querySelector('.link-status-group').addEventListener('click', function(e) {
-                if (e.target.classList.contains('status-btn')) {
-                    // ... önceki gibi aynı kod ...
-                }
-            });
+            document.querySelector('.link-status-group').addEventListener('click', function(e) { /* ... */ });
         });
     </script>
 }

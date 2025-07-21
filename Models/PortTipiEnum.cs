@@ -14,6 +14,12 @@ namespace BelbimEnv.Models
         FC = 3,
 
         [Display(Name = "Virtual Fiber Channel (vFC)")]
-        VirtualFC = 4
+        VirtualFC = 4,
+
+        [Display(Name = "Virtual")]
+        Virtual = 5,
+
+        [Display(Name = "Virtual Bakır")]
+        VirtualBakir = 6
     }
 }
