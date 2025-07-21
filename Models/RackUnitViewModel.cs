@@ -1,11 +1,13 @@
-﻿// Models/RackUnitViewModel.cs
+﻿using System.Collections.Generic;
+using System.Linq;
+
 namespace BelbimEnv.Models
 {
     public class RackUnitViewModel
     {
         public int U_Number { get; set; }
-        public Server OccupyingServer { get; set; } // Bu U birimini işgal eden sunucu
-        public bool IsOccupied => OccupyingServer != null;
-        public bool IsFront { get; set; } // Ön taraf mı, arka taraf mı?
+        // Artık tek bir sunucu yerine bir sunucu listesi tutuyor
+        public List<Server> OccupyingServers { get; set; } = new List<Server>();
+        public bool IsOccupied => OccupyingServers.Any();
     }
 }

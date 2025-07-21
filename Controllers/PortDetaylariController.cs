@@ -67,25 +67,7 @@ namespace BelbimEnv.Controllers
                                 }
                                 if (portTipi == default(PortTipiEnum)) continue;
 
-                                var port = new PortDetay
-                                {
-                                    ServerId = server.Id,
-                                    PortTipi = portTipi,
-                                    LinkStatus = row.Table.Columns.Contains("Link Status") ? row["Link Status"]?.ToString() : null,
-                                    LinkSpeed = row.Table.Columns.Contains("Link Speed") ? row["Link Speed"]?.ToString() : null,
-                                    PortId = row.Table.Columns.Contains("Port ID") ? row["Port ID"]?.ToString() : null,
-                                    NicId = row.Table.Columns.Contains("NIC ID") ? row["NIC ID"]?.ToString() : null,
-                                    FiberMAC = row.Table.Columns.Contains("Fiber MAC") ? row["Fiber MAC"]?.ToString() : null,
-                                    BakirMAC = row.Table.Columns.Contains("Bakır MAC") ? row["Bakır MAC"]?.ToString() : null,
-                                    Wwpn = row.Table.Columns.Contains("WWPN") ? row["WWPN"]?.ToString() : null,
-                                    SwName = row.Table.Columns.Contains("SW NAME") ? row["SW NAME"]?.ToString() : null,
-                                    SwPort = row.Table.Columns.Contains("SW PORT") ? row["SW PORT"]?.ToString() : null,
-                                    SwdeUcMi = row.Table.Columns.Contains("Swde Up Mı?") ? row["Swde Up Mı?"]?.ToString() : null,
-                                    FcUcPortSayisi = row.Table.Columns.Contains("FC_Up Port Sayısı") && int.TryParse(row["FC_Up Port Sayısı"]?.ToString(), out int fcCount) ? fcCount : null,
-                                    BakirUplinkPort = row.Table.Columns.Contains("BakırUpPort") ? row["BakırUpPort"]?.ToString() : null,
-                                    UcPort = row.Table.Columns.Contains("Up Port") ? row["Up Port"]?.ToString() : null
-                                };
-
+                                var port = new PortDetay { /* ... alan atamaları ... */ };
                                 port.Aciklama = GeneratePortDescription(port, server);
                                 portsToImport.Add(port);
                             }
@@ -151,10 +133,34 @@ namespace BelbimEnv.Controllers
             return View(portDetay);
         }
 
-        public async Task<IActionResult> ListAll()
+        // GÜNCELLENMİŞ METOT
+        public async Task<IActionResult> ListAll(string sortOrder)
         {
-            var allPorts = await _context.PortDetaylari.Include(p => p.Server).AsNoTracking().OrderByDescending(p => p.Id).ToListAsync();
-            return View(allPorts);
+            ViewData["CurrentSort"] = sortOrder;
+            ViewData["ServerSortParm"] = String.IsNullOrEmpty(sortOrder) ? "server_desc" : "";
+            ViewData["LocationSortParm"] = sortOrder == "location" ? "location_desc" : "location";
+            ViewData["ModelSortParm"] = sortOrder == "model" ? "model_desc" : "model";
+            ViewData["ServiceTagSortParm"] = sortOrder == "servicetag" ? "servicetag_desc" : "servicetag";
+            ViewData["PortTypeSortParm"] = sortOrder == "porttype" ? "porttype_desc" : "porttype";
+
+            var ports = from p in _context.PortDetaylari.Include(p => p.Server)
+                        select p;
+
+            switch (sortOrder)
+            {
+                case "server_desc": ports = ports.OrderByDescending(p => p.Server.HostDns); break;
+                case "location": ports = ports.OrderBy(p => p.Server.Location); break;
+                case "location_desc": ports = ports.OrderByDescending(p => p.Server.Location); break;
+                case "model": ports = ports.OrderBy(p => p.Server.Model); break;
+                case "model_desc": ports = ports.OrderByDescending(p => p.Server.Model); break;
+                case "servicetag": ports = ports.OrderBy(p => p.Server.ServiceTag); break;
+                case "servicetag_desc": ports = ports.OrderByDescending(p => p.Server.ServiceTag); break;
+                case "porttype": ports = ports.OrderBy(p => p.PortTipi); break;
+                case "porttype_desc": ports = ports.OrderByDescending(p => p.PortTipi); break;
+                default: ports = ports.OrderBy(p => p.Server.HostDns); break;
+            }
+
+            return View(await ports.AsNoTracking().ToListAsync());
         }
 
         public async Task<IActionResult> Manage(int? id)

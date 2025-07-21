@@ -1,5 +1,4 @@
-﻿// Models/RackVisualizationViewModel.cs
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace BelbimEnv.Models
 {
@@ -8,7 +7,7 @@ namespace BelbimEnv.Models
         public string SelectedLocation { get; set; }
         public List<string> AllLocations { get; set; } = new List<string>();
 
-        // Key: Kabin Adı (örn: "A101"), Value: O kabindeki U birimlerinin listesi
+        // Artık Models klasöründeki doğru RackUnitViewModel'i kullanıyor
         public Dictionary<string, List<RackUnitViewModel>> Racks { get; set; } = new Dictionary<string, List<RackUnitViewModel>>();
     }
 }

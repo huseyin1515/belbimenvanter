@@ -33,6 +33,7 @@
 
     @foreach (var rack in Model.Racks)
     {
+        var processedUnits = new HashSet<int>();
         <div class="rack-wrapper">
             <div class="rack-header">@rack.Key</div>
             <div class="rack">
@@ -42,37 +43,43 @@
 </div>
             <div class="rack-middle">
                 <div class="rack-units">
-                    @{
-                        var sortedUnits = rack.Value.OrderByDescending(u => u.U_Number).ToList();
-                    }
-                    @for (int i = 0; i < sortedUnits.Count; i++)
+                    @foreach (var unit in rack.Value.OrderByDescending(u => u.U_Number))
                     {
-                        var unit = sortedUnits[i];
+                        if (processedUnits.Contains(unit.U_Number)) { continue; }
+
                         if (unit.IsOccupied)
                         {
-                            var server = unit.OccupyingServer;
-                            int uSpan = rack.Value.Count(u => u.IsOccupied && u.OccupyingServer.Id == server.Id);
+                            var serversInThisBlock = unit.OccupyingServers;
+                            var firstServer = serversInThisBlock.First();
+
+                            int uSpan = rack.Value.Count(u => u.IsOccupied && u.OccupyingServers.Contains(firstServer));
                             int height = (uSpan * 20) - 2;
 
-                            if (!colorMap.ContainsKey(server.Model)) { colorMap[server.Model] = colors[colorIndex++ % colors.Count]; }
-                            string serverColor = colorMap[server.Model];
+                            for (int u = unit.U_Number; u > unit.U_Number - uSpan; u--) { processedUnits.Add(u); }
 
-                            <div class="server-block @(server.Id.ToString() == highlightedServerId ? "highlight-target" : "")"
-                                 id="server-@server.Id"
-                                 style="height: @(height)px; background-color: @serverColor;"
-                                 data-bs-toggle="tooltip" data-bs-placement="right" data-bs-html="true"
-                                 title="<strong>@server.HostDns</strong><br>Model: @server.Model<br>U Aralığı: @server.KabinU">
-                                <a asp-controller="Servers" asp-action="Details" asp-route-id="@server.Id" class="server-link">
-                                    <span class="server-name">@server.HostDns</span>
-                                    <span class="server-u">@server.KabinU</span>
-                                </a>
+                            <div class="server-block" style="height: @(height)px;">
+                                @foreach (var server in serversInThisBlock)
+                                {
+                                    if (!colorMap.ContainsKey(server.Model)) { colorMap[server.Model] = colors[colorIndex++ % colors.Count]; }
+                                    string serverColor = colorMap[server.Model];
+
+                                    <div class="server-sub-block @(server.Id.ToString() == highlightedServerId ? "highlight-target" : "")"
+                                         id="server-@server.Id"
+                                         style="background-color: @serverColor;"
+                                         data-bs-toggle="tooltip" data-bs-placement="right" data-bs-html="true"
+                                         title="<strong>@server.HostDns</strong><br>Model: @server.Model<br>U Aralığı: @server.KabinU">
+                                        <a asp-controller="Servers" asp-action="Details" asp-route-id="@server.Id" class="server-link">
+                                            <span class="server-name">@server.HostDns</span>
+                                            <span class="server-u">@server.KabinU</span>
+                                        </a>
+                                    </div>
+                                }
                             </div>
-
-                            i += (uSpan - 1);
                         }
                         else
                         {
                             <div class="empty-unit"></div>
+                            processedUnits.Add(unit.U_Number);
                         }
                     }
                 </div>
@@ -93,6 +100,7 @@
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
 
+        // DÜZELTME: Sadece yanıp sönme ve scroll script'i kaldı
         document.addEventListener("DOMContentLoaded", function() {
             const highlightedElement = document.querySelector('.highlight-target');
             if (highlightedElement) {
@@ -179,11 +187,17 @@
 
         .server-block {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
+            justify-content: stretch;
             border: 1px solid rgba(0,0,0,0.2);
             border-radius: 3px;
-            text-align: center;
+            overflow: hidden;
+        }
+
+        .server-sub-block {
+            flex: 1;
+            display: flex;
+            align-items: center;
             position: relative;
             z-index: 1;
         }
@@ -218,28 +232,26 @@
             border-radius: 3px;
         }
 
-        /* YENİ VE DAHA BELİRGİN ANİMASYON */
-        .server-block.flash {
-            animation: pulse-border 2s 2;
+        /* DÜZELTME: Ok ile ilgili tüm CSS kaldırıldı */
+
+        .highlight-target.flash {
+            animation: pulse-glow-red 3s 3; /* 1.5 saniye, 2 tekrar */
         }
 
-        @@keyframes pulse-border {
+        @@keyframes pulse-glow-red {
             0% {
                 transform: scale(1);
-                outline: 3px solid rgba(255, 204, 0, 0.9);
-                outline-offset: 2px;
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
             }
 
             50% {
-                transform: scale(1.02);
-                outline: 3px solid rgba(255, 204, 0, 0.3);
-                outline-offset: 8px;
+                transform: scale(1.15); /* Daha belirgin büyütme */
+                box-shadow: 0 0 25px 15px rgba(220, 53, 69, 0); /* Daha geniş bir parlama */
             }
 
             100% {
                 transform: scale(1);
-                outline: 3px solid rgba(255, 204, 0, 0.9);
-                outline-offset: 2px;
+                box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
             }
         }
     </style>

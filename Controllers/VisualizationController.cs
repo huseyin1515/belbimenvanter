@@ -71,7 +71,6 @@ namespace BelbimEnv.Controllers
 
             var allServers = await _context.Servers.AsNoTracking().ToListAsync();
             var allLocations = allServers.Where(s => !string.IsNullOrEmpty(s.Location)).Select(s => s.Location).Distinct().OrderBy(l => l).ToList();
-
             var viewModel = new RackVisualizationViewModel
             {
                 AllLocations = allLocations,
@@ -83,8 +82,8 @@ namespace BelbimEnv.Controllers
 
             foreach (var cabinetName in cabinetsInLocation)
             {
-                var frontU_Map = new Dictionary<int, Server>();
-                var rearU_Map = new Dictionary<int, Server>();
+                var frontU_Map = new Dictionary<int, List<Server>>();
+                var rearU_Map = new Dictionary<int, List<Server>>();
                 var serversInCabinet = serversInLocation.Where(s => s.Kabin == cabinetName);
 
                 foreach (var server in serversInCabinet)
@@ -92,21 +91,28 @@ namespace BelbimEnv.Controllers
                     var (startU, endU) = ParseKabinU(server.KabinU);
                     if (startU == 0 || endU == 0) continue;
                     var targetMap = (server.RearFront == "R" || server.RearFront == "Rear") ? rearU_Map : frontU_Map;
-                    for (int u = startU; u <= endU; u++) { if (!targetMap.ContainsKey(u)) { targetMap[u] = server; } }
+
+                    for (int u = startU; u <= endU; u++)
+                    {
+                        if (!targetMap.ContainsKey(u))
+                        {
+                            targetMap[u] = new List<Server>();
+                        }
+                        targetMap[u].Add(server);
+                    }
                 }
 
                 var frontUnits = new List<RackUnitViewModel>();
                 var rearUnits = new List<RackUnitViewModel>();
                 for (int i = 1; i <= RACK_SIZE_U; i++)
                 {
-                    frontUnits.Add(new RackUnitViewModel { U_Number = i, IsFront = true, OccupyingServer = frontU_Map.GetValueOrDefault(i) });
-                    rearUnits.Add(new RackUnitViewModel { U_Number = i, IsFront = false, OccupyingServer = rearU_Map.GetValueOrDefault(i) });
+                    frontUnits.Add(new RackUnitViewModel { U_Number = i, OccupyingServers = frontU_Map.GetValueOrDefault(i, new List<Server>()) });
+                    rearUnits.Add(new RackUnitViewModel { U_Number = i, OccupyingServers = rearU_Map.GetValueOrDefault(i, new List<Server>()) });
                 }
 
                 viewModel.Racks[cabinetName + " (Ön)"] = frontUnits;
                 viewModel.Racks[cabinetName + " (Arka)"] = rearUnits;
             }
-
             return View(viewModel);
         }
 

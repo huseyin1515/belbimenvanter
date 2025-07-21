@@ -43,9 +43,19 @@
 <div class="card shadow-sm">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-striped table-bordered table-sm">
+            <table class="table table-striped table-bordered table-hover">
                 <thead class="table-light">
-                    <tr><th>Ait Olduğu Sunucu</th><th>Lokasyon</th><th>Model</th><th>Service Tag</th><th>Port Tipi</th><th>MAC / WWPN</th><th>Açıklama</th><th>Link Durumu</th><th class="text-center">İşlemler</th></tr>
+                    <tr>
+                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["ServerSortParm"]">Ait Olduğu Sunucu <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["LocationSortParm"]">Lokasyon <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["ModelSortParm"]">Model <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["ServiceTagSortParm"]">Service Tag <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["PortTypeSortParm"]">Port Tipi <i class="fas fa-sort"></i></a></th>
+                        <th>MAC / WWPN</th>
+                        <th>Açıklama</th>
+                        <th>Link Durumu</th>
+                        <th class="text-center">İşlemler</th>
+                    </tr>
                 </thead>
                 <tbody id="portTableBody">
                     @if (!Model.Any())
@@ -65,18 +75,21 @@
                                 {
                                     <strong>Fiber MAC:</strong> 
                                     @port.FiberMAC
+                                    ;
                                 }
                                 else if (port.PortTipi == PortTipiEnum.Bakir || port.PortTipi == PortTipiEnum.VirtualBakir)
                                 {
 
                                     <strong>Bakır MAC:</strong> 
                                     @port.BakirMAC
+                                    ;
                                 }
                                 else if (port.PortTipi == PortTipiEnum.SAN)
                                 {
 
                                     <strong>WWPN:</strong> 
                                     @port.Wwpn
+                                    ;
                                 }
                             </td>
                             <td>@port.Aciklama</td>
@@ -84,16 +97,19 @@
                                 @if (port.LinkStatus?.ToLower() == "up")
                                 {
                                     <span class="badge bg-success">Up</span>
+                                    ;
                                 }
                                 else if (port.LinkStatus?.ToLower() == "down")
                                 {
 
                                     <span class="badge bg-danger">Down</span>
+                                    ;
                                 }
                                 else
                                 {
 
                                     <span class="badge bg-secondary">@port.LinkStatus</span>
+                                    ;
                                 }
                             </td>
                             <td class="text-center text-nowrap">
@@ -133,4 +149,21 @@
             });
         });
     </script>
+}
+
+@section Styles {
+    <style>
+        .sort-link {
+            color: inherit;
+            text-decoration: none;
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+            .sort-link:hover {
+                color: #0d6efd;
+                text-decoration: none;
+            }
+    </style>
 }
