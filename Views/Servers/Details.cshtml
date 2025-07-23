@@ -74,7 +74,7 @@
                             <th>Açıklama</th>
                             <th>Link Durumu</th>
                             <th>Switch Adı</th>
-                            <th class="text-center" style="width: 120px;">İşlemler</th>
+                            <th class="text-center">İşlemler</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -87,18 +87,21 @@
                                     {
                                         <strong>Fiber MAC:</strong> 
                                         @port.FiberMAC
+                                        ;
                                     }
                                     else if (port.PortTipi == PortTipiEnum.Bakir || port.PortTipi == PortTipiEnum.VirtualBakir)
                                     {
 
                                         <strong>Bakır MAC:</strong> 
                                         @port.BakirMAC
+                                        ;
                                     }
                                     else if (port.PortTipi == PortTipiEnum.SAN)
                                     {
 
                                         <strong>WWPN:</strong> 
                                         @port.Wwpn
+                                        ;
                                     }
                                 </td>
                                 <td>@port.Aciklama</td>
@@ -106,27 +109,32 @@
                                     @if (port.LinkStatus?.ToLower() == "up")
                                     {
                                         <span class="badge bg-success">Up</span>
+                                        ;
                                     }
                                     else if (port.LinkStatus?.ToLower() == "down")
                                     {
 
                                         <span class="badge bg-danger">Down</span>
+                                        ;
                                     }
                                     else
                                     {
 
                                         <span class="badge bg-secondary">@port.LinkStatus</span>
+                                        ;
                                     }
                                 </td>
                                 <td>@port.SwName</td>
                                 <td class="text-center text-nowrap">
-                                    <!-- YENİ EKLENEN DETAY BUTONU -->
                                     <a asp-controller="PortDetaylari" asp-action="Details" asp-route-id="@port.Id" class="btn btn-sm btn-outline-info" title="Port Detayları"><i class="fas fa-info-circle"></i></a>
 
-                                    <a asp-controller="PortDetaylari" asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
-                                    <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button>
-                                    </form>
+                                    @if (User.IsInRole("SuperUser"))
+                                    {
+                                        <a asp-controller="PortDetaylari" asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
+                                        <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button>
+                                        </form>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -153,6 +161,9 @@
     <!-- Sayfa Altı Butonları -->
     <div class="card-footer text-end">
         <a asp-controller="PortDetaylari" asp-action="Manage" asp-route-id="@Model.Id" class="btn btn-success"><i class="fas fa-cogs me-1"></i> Port Yönetim Sayfası</a>
-        <a asp-action="Edit" asp-controller="Servers" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-server me-1"></i> Ana Sunucu Bilgilerini Düzenle</a>
+        @if (User.IsInRole("SuperUser"))
+        {
+            <a asp-action="Edit" asp-controller="Servers" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-server me-1"></i> Ana Sunucu Bilgilerini Düzenle</a>
+        }
     </div>
 </div>

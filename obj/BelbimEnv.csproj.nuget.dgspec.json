@@ -50,9 +50,17 @@
         "net8.0": {
           "targetAlias": "net8.0",
           "dependencies": {
+            "BCrypt.Net-Next": {
+              "target": "Package",
+              "version": "[4.0.3, )"
+            },
             "BrowardHealth.ExcelReaderWrapper": {
               "target": "Package",
               "version": "[1.0.7, )"
+            },
+            "ClosedXML": {
+              "target": "Package",
+              "version": "[0.105.0, )"
             },
             "CsvHelper": {
               "target": "Package",

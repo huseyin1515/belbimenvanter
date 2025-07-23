@@ -1,0 +1,55 @@
+﻿@model BelbimEnv.Models.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Yeni Hesap Oluştur";
+    Layout = "_LayoutAccount";
+}
+
+<div class="text-center">
+    <i class="fas fa-user-plus fa-3x text-success mb-3"></i>
+    <h1 class="h3 mb-3 fw-normal">Yeni Hesap Oluştur</h1>
+    <p class="text-muted">Sisteme erişmek için bilgilerinizi girin.</p>
+</div>
+
+<form asp-action="Register" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3" role="alert"></div>
+
+    <div class="form-floating mb-3">
+        <input asp-for="FullName" class="form-control" placeholder="Ad Soyad" required />
+        <label asp-for="FullName"></label>
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input asp-for="Username" class="form-control" placeholder="Kullanıcı Adı" required />
+        <label asp-for="Username"></label>
+        <span asp-validation-for="Username" class="text-danger"></span>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input asp-for="Email" class="form-control" placeholder="Email Adresi" required />
+        <label asp-for="Email"></label>
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div class="form-floating mb-3">
+        <input asp-for="Password" class="form-control" placeholder="Parola" required />
+        <label asp-for="Password"></label>
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+    <div class="form-floating mb-3">
+        <input asp-for="ConfirmPassword" class="form-control" placeholder="Parolayı Onayla" required />
+        <label asp-for="ConfirmPassword"></label>
+        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+    </div>
+
+    <button class="w-100 btn btn-lg btn-primary" type="submit">Hesap Oluştur</button>
+</form>
+
+<div class="text-center mt-4">
+    <p class="text-muted">Zaten bir hesabınız var mı? <a asp-action="Login">Giriş yapın</a>.</p>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

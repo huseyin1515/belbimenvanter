@@ -1,5 +1,8 @@
 ﻿using BelbimEnv.Data;
 using BelbimEnv.Models;
+using ExcelDataReader;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -8,11 +11,10 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using ExcelDataReader;
-using Microsoft.AspNetCore.Http;
 
 namespace BelbimEnv.Controllers
 {
+    [Authorize]
     public class PortDetaylariController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -21,9 +23,9 @@ namespace BelbimEnv.Controllers
         {
             _context = context;
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperUser")] // Sadece SuperUser erişebilir
         public async Task<IActionResult> ImportExcel(IFormFile file, string importOption)
         {
             if (file == null || file.Length == 0)
@@ -140,7 +142,7 @@ namespace BelbimEnv.Controllers
             else if ((port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC) && port.FcUcPortSayisi.HasValue) { countInfo = port.FcUcPortSayisi.Value.ToString(); }
             return $"{deviceName}_{lastFourDigits}_{typeInitial}_{countInfo}";
         }
-
+        [Authorize(Roles = "SuperUser,User")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -148,7 +150,7 @@ namespace BelbimEnv.Controllers
             if (portDetay == null) return NotFound();
             return View(portDetay);
         }
-
+        [Authorize(Roles = "SuperUser,User")]
         public async Task<IActionResult> ListAll(string sortOrder)
         {
             ViewData["CurrentSort"] = sortOrder;
@@ -177,7 +179,7 @@ namespace BelbimEnv.Controllers
 
             return View(await ports.AsNoTracking().ToListAsync());
         }
-
+        [Authorize(Roles = "SuperUser")]
         public async Task<IActionResult> Manage(int? id)
         {
             if (id == null) return NotFound("Sunucu ID'si belirtilmedi.");
@@ -195,7 +197,7 @@ namespace BelbimEnv.Controllers
             };
             return View(viewModel);
         }
-
+        [Authorize(Roles = "SuperUser")]
         public async Task<IActionResult> Create(int serverId)
         {
             var server = await _context.Servers.AsNoTracking().FirstOrDefaultAsync(s => s.Id == serverId);
@@ -206,6 +208,7 @@ namespace BelbimEnv.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperUser")]
         public async Task<IActionResult> Create(PortCreateBulkViewModel viewModel)
         {
             var server = await _context.Servers.AsNoTracking().FirstOrDefaultAsync(s => s.Id == viewModel.ServerId);
@@ -227,7 +230,7 @@ namespace BelbimEnv.Controllers
             else { TempData["ErrorMessage"] = "Kaydedilecek geçerli bir port girilmedi."; }
             return RedirectToAction(nameof(Manage), new { id = viewModel.ServerId });
         }
-
+        [Authorize(Roles = "SuperUser")]
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
@@ -238,6 +241,7 @@ namespace BelbimEnv.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperUser")]
         public async Task<IActionResult> Edit(int id, PortDetay portDetayFromForm)
         {
             if (id != portDetayFromForm.Id) return NotFound();
@@ -264,6 +268,7 @@ namespace BelbimEnv.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "SuperUser")]
         public async Task<IActionResult> Delete(int id)
         {
             var portDetay = await _context.PortDetaylari.FindAsync(id);

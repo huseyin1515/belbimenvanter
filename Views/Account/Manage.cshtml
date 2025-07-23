@@ -1,0 +1,39 @@
+﻿@model BelbimEnv.Models.ManageProfileViewModel
+@{
+    ViewData["Title"] = "Profili Yönet";
+}
+
+<h3>@ViewData["Title"]</h3>
+<p class="text-muted">Kullanıcı adınız: <strong>@Model.Username</strong></p>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Manage" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="form-group mb-3">
+                <label asp-for="FullName"></label>
+                <input asp-for="FullName" class="form-control" />
+                <span asp-validation-for="FullName" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="Email"></label>
+                <input asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <hr />
+            <p class="text-muted small">Parolanızı değiştirmek isterseniz aşağıdaki alanları doldurun.</p>
+            <div class="form-group mb-3">
+                <label asp-for="NewPassword"></label>
+                <input asp-for="NewPassword" class="form-control" />
+                <span asp-validation-for="NewPassword" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label asp-for="ConfirmPassword"></label>
+                <input asp-for="ConfirmPassword" class="form-control" />
+                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Profili Güncelle</button>
+        </form>
+    </div>
+</div>

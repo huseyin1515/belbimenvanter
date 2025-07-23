@@ -20,14 +20,14 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
 }
-
+@if (User.IsInRole("SuperUser")){
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3>@ViewData["Title"]</h3>
     <a asp-controller="PortDetaylari" asp-action="Create" asp-route-serverId="@Model.ServerId" class="btn btn-primary">
         <i class="fas fa-plus me-1"></i> Yeni Port Ekle
     </a>
 </div>
-
+}
 <!-- Mevcut Portlar Kartı -->
 <div class="card shadow-sm">
     <div class="card-body">

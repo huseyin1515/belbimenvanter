@@ -34,9 +34,12 @@
             <span class="input-group-text"><i class="fas fa-search"></i></span>
             <input type="text" id="searchInput" class="form-control" placeholder="Ara...">
         </div>
-        <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#portExcelUploadModal">
-            <i class="fas fa-file-excel me-1"></i> Excel ile Yükle
-        </button>
+        @if (User.IsInRole("SuperUser"))
+        {
+            <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#portExcelUploadModal">
+                <i class="fas fa-file-excel me-1"></i> Excel ile Yükle
+            </button>
+        }
     </div>
 </div>
 
@@ -114,8 +117,11 @@
                             </td>
                             <td class="text-center text-nowrap">
                                 <a asp-controller="PortDetaylari" asp-action="Details" asp-route-id="@port.Id" class="btn btn-sm btn-outline-info" title="Port Detayları"><i class="fas fa-info-circle"></i></a>
-                                <a asp-controller="PortDetaylari" asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
-                                <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');"><button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button></form>
+                                @if (User.IsInRole("SuperUser"))
+                                {
+                                    <a asp-controller="PortDetaylari" asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
+                                    <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');"><button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button></form>
+                                }
                             </td>
                         </tr>
                     }

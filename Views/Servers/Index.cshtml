@@ -4,22 +4,18 @@
     ViewData["Title"] = "Envanter Paneli";
 }
 
-<!-- MODERN EXCEL YÜKLEME MODAL PENCERESİ -->
+<!-- EXCEL YÜKLEME MODAL PENCERESİ -->
 <div class="modal fade" id="excelUploadModal" tabindex="-1" aria-labelledby="excelUploadModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form asp-controller="Servers" asp-action="ImportExcel" method="post" enctype="multipart/form-data">
                 @Html.AntiForgeryToken()
-                <div class="modal-header border-0">
-                    <h5 class="modal-title" id="excelUploadModalLabel"><i class="fas fa-file-excel text-success me-2"></i>Excel ile Veri Yükle</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+                <div class="modal-header border-0"><h5 class="modal-title" id="excelUploadModalLabel"><i class="fas fa-file-excel text-success me-2"></i>Excel ile Veri Yükle</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
                     <div class="mb-4">
                         <label for="fileInput" id="drop-area" class="form-label text-center p-4 border-2 border-dashed rounded cursor-pointer">
                             <i class="fas fa-cloud-arrow-up fs-1 text-secondary mb-2"></i>
-                            <p class="mb-0">Dosyanızı buraya sürükleyin</p>
-                            <small class="text-muted">veya seçmek için tıklayın (.xlsx)</small>
+                            <p class="mb-0">Dosyanızı buraya sürükleyin</p><small class="text-muted">veya seçmek için tıklayın (.xlsx)</small>
                         </label>
                         <input type="file" name="file" id="fileInput" class="d-none" required accept=".xlsx" />
                         <div id="file-name-display" class="mt-2 text-center text-muted small"></div>
@@ -32,14 +28,49 @@
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer border-0">
+                <div class="modal-footer border-0"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" id="uploadButton" class="btn btn-primary" disabled><i class="fas fa-upload me-1"></i> Yükle</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- YENİ DIŞARI AKTARMA MODAL PENCERESİ -->
+<div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-controller="Servers" asp-action="ExportToExcel" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportExcelModalLabel"><i class="fas fa-file-export text-warning me-2"></i>Excel'e Aktar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Lütfen raporda yer almasını istediğiniz sütunları seçin.</p>
+                    <div class="row">
+                        @{
+                            var properties = typeof(Server).GetProperties().Where(p => p.Name != "Id" && p.Name != "PortDetaylari");
+                            int colIndex = 0;
+                        }
+                        @foreach (var prop in properties)
+                        {
+                            <div class="col-6 form-check mx-3">
+                                <input class="form-check-input" type="checkbox" name="Columns[@colIndex].IsSelected" value="true" checked id="col_@prop.Name" />
+                                <input type="hidden" name="Columns[@colIndex].Name" value="@prop.Name" />
+                                <label class="form-check-label" for="col_@prop.Name">@prop.Name</label>
+                            </div>
+                            colIndex++;
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" id="uploadButton" class="btn btn-primary" disabled><i class="fas fa-upload me-1"></i> Yükle</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-download me-1"></i> Aktar</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
+
 
 <!-- Sayfa Başlığı, Arama ve Butonlar -->
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -49,12 +80,20 @@
             <span class="input-group-text"><i class="fas fa-search"></i></span>
             <input type="text" id="serverSearchInput" class="form-control" placeholder="Envanter bilgilerinde ara...">
         </div>
-        <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#excelUploadModal">
-            <i class="fas fa-file-excel me-1"></i> Excel ile Yükle
+
+        <button type="button" class="btn btn-warning ms-2" data-bs-toggle="modal" data-bs-target="#exportExcelModal">
+            <i class="fas fa-file-export me-1"></i> Dışarı Aktar
         </button>
-        <a asp-action="Create" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i> Yeni Envanter Ekle
-        </a>
+
+        @if (User.IsInRole("SuperUser"))
+        {
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#excelUploadModal">
+                <i class="fas fa-file-excel me-1"></i> Excel ile Yükle
+            </button>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="fas fa-plus me-1"></i> Yeni Envanter Ekle
+            </a>
+        }
     </div>
 </div>
 
@@ -75,10 +114,7 @@
                     </tr>
                 </thead>
                 <tbody id="serverTableBody">
-                    @if (Model == null || !Model.Any())
-                    {
-                        <tr><td colspan="7" class="text-center py-4"><p class="text-muted">Henüz hiç envanter kaydı bulunmuyor.</p></td></tr>
-                    }
+                    @if (Model == null || !Model.Any()) { /* ... */ }
                     else
                     {
                         @foreach (var item in Model)
@@ -93,8 +129,13 @@
                                 <td class="text-end text-nowrap">
                                     <a asp-controller="PortDetaylari" asp-action="Manage" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success" title="Port Detaylarını Yönet"><i class="fas fa-network-wired"></i></a>
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Detaylar"><i class="fas fa-info-circle"></i></a>
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pencil-alt"></i></a>
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></a>
+                                    @if (User.IsInRole("SuperUser"))
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary" title="Düzenle"><i class="fas fa-pencil-alt"></i></a>
+                                        <form asp-controller="Servers" asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu sunucuyu ve tüm ilişkili portlarını silmek istediğinizden emin misiniz?');">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button>
+                                        </form>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -107,9 +148,9 @@
 </div>
 
 @section Scripts {
-    <!-- Arama scripti -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
+            // ARAMA SCRİPT'İ
             const searchInput = document.getElementById('serverSearchInput');
             const tableBody = document.getElementById('serverTableBody');
             if (tableBody) {
@@ -132,42 +173,39 @@
                     }
                 });
             }
-        });
-    </script>
 
-    <!-- Modal için JavaScript -->
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
+            // MODAL SCRİPT'İ
             const dropArea = document.getElementById('drop-area');
             const fileInput = document.getElementById('fileInput');
             const fileNameDisplay = document.getElementById('file-name-display');
             const uploadButton = document.getElementById('uploadButton');
-
-            dropArea.addEventListener('click', () => fileInput.click());
-            fileInput.addEventListener('change', function() {
-                if (this.files.length > 0) {
-                    fileNameDisplay.textContent = `Seçilen dosya: ${this.files[0].name}`;
-                    uploadButton.disabled = false;
-                } else {
-                    fileNameDisplay.textContent = '';
-                    uploadButton.disabled = true;
-                }
-            });
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, preventDefaults, false));
-            function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
-            ['dragenter', 'dragover'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.add('highlight'), false));
-            ['dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.remove('highlight'), false));
-            dropArea.addEventListener('drop', function(e) {
-                fileInput.files = e.dataTransfer.files;
-                fileInput.dispatchEvent(new Event('change'));
-            });
+            if (dropArea && fileInput) {
+                dropArea.addEventListener('click', () => fileInput.click());
+                fileInput.addEventListener('change', function() {
+                    if (this.files.length > 0) {
+                        fileNameDisplay.textContent = `Seçilen dosya: ${this.files[0].name}`;
+                        uploadButton.disabled = false;
+                    } else {
+                        fileNameDisplay.textContent = '';
+                        uploadButton.disabled = true;
+                    }
+                });
+                ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, preventDefaults, false));
+                function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+                ['dragenter', 'dragover'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.add('highlight'), false));
+                ['dragleave', 'drop'].forEach(eventName => dropArea.addEventListener(eventName, () => dropArea.classList.remove('highlight'), false));
+                dropArea.addEventListener('drop', function(e) {
+                    fileInput.files = e.dataTransfer.files;
+                    fileInput.dispatchEvent(new Event('change'));
+                });
+            }
         });
     </script>
 }
 
 @section Styles {
-    <!-- Modal için CSS -->
     <style>
+        /* Modal için stiller */
         .border-dashed {
             border-style: dashed !important;
         }
@@ -180,9 +218,7 @@
             border-color: var(--bs-primary);
             background-color: var(--bs-light);
         }
-    </style>
-    <!-- Sıralama linkleri için CSS -->
-    <style>
+        /* Sıralama linkleri için stiller */
         .sort-link {
             color: white;
             text-decoration: none;

@@ -1,9 +1,10 @@
 using BelbimEnv.Data;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies; // Gerekli using eklendi
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,32 +13,43 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// ==========================================================
+// === YENÝ MANUEL AUTHENTICATION SÝSTEMÝ ===
+// ==========================================================
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Account/Login"; // Giriþ yapýlmamýþsa yönlendirilecek sayfa
+        options.AccessDeniedPath = "/Account/AccessDenied"; // Yetkisi yoksa yönlendirilecek sayfa
+        options.ExpireTimeSpan = System.TimeSpan.FromMinutes(30); // Oturum süresi
+        options.SlidingExpiration = true; // Her istekte süreyi uzat
+    });
+// ==========================================================
+
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();
 
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    app.UseDeveloperExceptionPage();
 }
 else
 {
-    app.UseDeveloperExceptionPage(); // Geliþtirme ortamý için eklendi
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Authorization ve Authentication kaldýrýldý
-// app.UseAuthentication();
-// app.UseAuthorization();
+// YENÝDEN EKLENDÝ VE AKTÝF EDÝLDÝ
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Servers}/{action=Index}/{id?}");
-
-// app.MapRazorPages(); satýrý da kaldýrýldý
+    pattern: "{controller=Account}/{action=Login}/{id?}"); // Baþlangýç sayfasý artýk Login
 
 app.Run();

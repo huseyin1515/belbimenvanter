@@ -1,0 +1,53 @@
+﻿@model BelbimEnv.Models.User
+
+@{
+    ViewData["Title"] = "Kullanıcı Detayı";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 text-dark"><i class="fas fa-user-tag me-2"></i>Kullanıcı Detayı: @Model.Username</h4>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Kullanıcı Listesine Dön</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Kullanıcı ID</dt>
+            <dd class="col-sm-9">@Model.Id</dd>
+
+            <dt class="col-sm-3">Kullanıcı Adı</dt>
+            <dd class="col-sm-9">@Model.Username</dd>
+
+            <dt class="col-sm-3">Ad Soyad</dt>
+            <dd class="col-sm-9">@Model.FullName</dd>
+
+            <dt class="col-sm-3">Email Adresi</dt>
+            <dd class="col-sm-9">@Model.Email</dd>
+
+            <dt class="col-sm-3">Rol / Durum</dt>
+            <dd class="col-sm-9">
+                @if (Model.Role == "SuperUser")
+                {
+                    <span class="badge bg-primary fs-6">Süper Kullanıcı</span>
+                }
+                else if (Model.Role == "User")
+                {
+
+                    <span class="badge bg-success fs-6">Kullanıcı</span>
+                }
+                else if (Model.Role == "Bekleyen")
+                {
+
+                    <span class="badge bg-warning text-dark fs-6">Onay Bekliyor</span>
+                }
+            </dd>
+
+            <dt class="col-sm-3">Hesap Oluşturma Tarihi</dt>
+            <dd class="col-sm-9">@Model.CreatedAt.ToString("F")</dd>
+        </dl>
+    </div>
+    <div class="card-footer text-end">
+        <a asp-action="EditUser" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-user-edit me-1"></i> Bu Kullanıcıyı Düzenle</a>
+    </div>
+</div>
