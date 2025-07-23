@@ -5,7 +5,7 @@
     ViewData["Title"] = "Tüm Portların Listesi";
 }
 
-<!-- EXCEL YÜKLEME MODAL PENCERESİ -->
+<!-- EXCEL YÜKLEME MODALI -->
 <div class="modal fade" id="portExcelUploadModal" tabindex="-1" aria-labelledby="portExcelUploadModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -27,6 +27,44 @@
     </div>
 </div>
 
+<!-- YENİ DIŞARI AKTARMA MODAL PENCERESİ -->
+<div class="modal fade" id="exportPortsExcelModal" tabindex="-1" aria-labelledby="exportPortsExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-controller="PortDetaylari" asp-action="ExportToExcel" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exportPortsExcelModalLabel"><i class="fas fa-file-export text-warning me-2"></i>Portları Excel'e Aktar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="text-muted">Lütfen raporda yer almasını istediğiniz sütunları seçin.</p>
+                    <div class="row">
+                        @{
+                            var properties = typeof(PortDetay).GetProperties().Where(p => p.Name != "Id");
+                            int colIndex = 0;
+                        }
+                        @foreach (var prop in properties)
+                        {
+                            <div class="col-6 form-check mx-3">
+                                <input class="form-check-input" type="checkbox" name="Columns[@colIndex].IsSelected" value="true" checked id="port_col_@prop.Name" />
+                                <input type="hidden" name="Columns[@colIndex].Name" value="@prop.Name" />
+                                <label class="form-check-label" for="port_col_@prop.Name">@prop.Name</label>
+                            </div>
+                            colIndex++;
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-download me-1"></i> Aktar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h3><i class="fas fa-list-alt me-2"></i>@ViewData["Title"]</h3>
     <div>
@@ -34,9 +72,14 @@
             <span class="input-group-text"><i class="fas fa-search"></i></span>
             <input type="text" id="searchInput" class="form-control" placeholder="Ara...">
         </div>
+
+        <button type="button" class="btn btn-warning ms-2" data-bs-toggle="modal" data-bs-target="#exportPortsExcelModal">
+            <i class="fas fa-file-export me-1"></i> Dışarı Aktar
+        </button>
+
         @if (User.IsInRole("SuperUser"))
         {
-            <button type="button" class="btn btn-success ms-2" data-bs-toggle="modal" data-bs-target="#portExcelUploadModal">
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#portExcelUploadModal">
                 <i class="fas fa-file-excel me-1"></i> Excel ile Yükle
             </button>
         }

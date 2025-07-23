@@ -1,5 +1,6 @@
 ﻿using BelbimEnv.Data;
 using BelbimEnv.Models;
+using ClosedXML.Excel;
 using ExcelDataReader;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -179,6 +180,67 @@ namespace BelbimEnv.Controllers
 
             return View(await ports.AsNoTracking().ToListAsync());
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExportToExcel(ExportViewModel model)
+        {
+            var selectedColumns = model.Columns.Where(c => c.IsSelected).Select(c => c.Name).ToList();
+            if (!selectedColumns.Any())
+            {
+                TempData["ErrorMessage"] = "Lütfen dışarı aktarmak için en az bir sütun seçin.";
+                return RedirectToAction(nameof(ListAll));
+            }
+
+            // Portları çekerken ilişkili sunucu bilgisini de getiriyoruz
+            var ports = await _context.PortDetaylari.Include(p => p.Server).AsNoTracking().ToListAsync();
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Port_Listesi");
+                var currentRow = 1;
+
+                // Başlıkları oluştur
+                for (int i = 0; i < selectedColumns.Count; i++)
+                {
+                    worksheet.Cell(currentRow, i + 1).Value = selectedColumns[i];
+                }
+
+                // Verileri ekle
+                foreach (var port in ports)
+                {
+                    currentRow++;
+                    for (int i = 0; i < selectedColumns.Count; i++)
+                    {
+                        var columnName = selectedColumns[i];
+                        object propertyValue = null;
+
+                        // Eğer sütun adı "Server" ise, ilişkili sunucunun HostDns'ini al
+                        if (columnName == "Server")
+                        {
+                            propertyValue = port.Server?.HostDns;
+                        }
+                        else
+                        {
+                            propertyValue = typeof(PortDetay).GetProperty(columnName)?.GetValue(port, null);
+                        }
+
+                        worksheet.Cell(currentRow, i + 1).Value = propertyValue?.ToString() ?? "";
+                    }
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+                    string excelName = $"Port_Listesi_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelName);
+                }
+            }
+        }
+
         [Authorize(Roles = "SuperUser")]
         public async Task<IActionResult> Manage(int? id)
         {
