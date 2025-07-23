@@ -17,93 +17,97 @@ build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = BelbimEnv
 build_property.RootNamespace = BelbimEnv
-build_property.ProjectDir = C:\Users\Ozgur\source\repos\belbimenvanter\
+build_property.ProjectDir = C:\Users\Ozgur\source\repos\yedek\belbimenvanter\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\Ozgur\source\repos\belbimenvanter
+build_property.MSBuildProjectDirectory = C:\Users\Ozgur\source\repos\yedek\belbimenvanter
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/PortDetaylari/Create.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/PortDetaylari/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9ydERldGF5bGFyaVxDcmVhdGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/PortDetaylari/Details.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/PortDetaylari/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9ydERldGF5bGFyaVxEZXRhaWxzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/PortDetaylari/Edit.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/PortDetaylari/Edit.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9ydERldGF5bGFyaVxFZGl0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/PortDetaylari/ListAll.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/PortDetaylari/ListAll.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9ydERldGF5bGFyaVxMaXN0QWxsLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/PortDetaylari/Manage.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/PortDetaylari/Manage.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUG9ydERldGF5bGFyaVxNYW5hZ2UuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Reports/Index.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Reports/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVwb3J0c1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Servers/Create.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Servers/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VydmVyc1xDcmVhdGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Servers/Delete.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Servers/Delete.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VydmVyc1xEZWxldGUuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Servers/Details.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Servers/Details.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VydmVyc1xEZXRhaWxzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Servers/Edit.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Servers/Edit.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VydmVyc1xFZGl0LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Servers/Index.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Servers/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2VydmVyc1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Shared/Error.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Shared/_ValidationScriptsPartial.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Shared/_LoginPartial.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9Mb2dpblBhcnRpYWwuY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Visualization/Index.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Visualization/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmlzdWFsaXphdGlvblxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Visualization/RackView.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Visualization/RackView.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmlzdWFsaXphdGlvblxSYWNrVmlldy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Visualization/_RackSelector.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Visualization/_RackSelector.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmlzdWFsaXphdGlvblxfUmFja1NlbGVjdG9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Visualization/_RackSelectorLocations.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Visualization/_RackSelectorLocations.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcVmlzdWFsaXphdGlvblxfUmFja1NlbGVjdG9yTG9jYXRpb25zLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/_ViewImports.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/_ViewStart.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Ozgur/source/repos/belbimenvanter/Views/Shared/_Layout.cshtml]
+[C:/Users/Ozgur/source/repos/yedek/belbimenvanter/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-sr74tkhgzq

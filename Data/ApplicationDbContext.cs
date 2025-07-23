@@ -3,18 +3,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace BelbimEnv.Data
 {
+    // Kalıtım tekrar DbContext'e çevrildi
     public class ApplicationDbContext : DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
+        {
+        }
 
         public DbSet<Server> Servers { get; set; }
         public DbSet<PortDetay> PortDetaylari { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            base.OnModelCreating(modelBuilder);
+            base.OnModelCreating(builder); // Bu satır kalabilir, zararı yok.
 
-            modelBuilder.Entity<PortDetay>()
+            builder.Entity<PortDetay>()
                 .HasOne(p => p.Server)
                 .WithMany(s => s.PortDetaylari)
                 .HasForeignKey(p => p.ServerId)

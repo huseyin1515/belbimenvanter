@@ -49,12 +49,13 @@ namespace BelbimEnv.Controllers
                         var allServers = await _context.Servers.ToListAsync();
                         var serversDict = allServers
                             .Where(s => !string.IsNullOrEmpty(s.ServiceTag))
-                            .GroupBy(s => s.ServiceTag)
-                            .ToDictionary(g => g.Key, g => g.First());
+                            .GroupBy(s => s.ServiceTag.Trim(), StringComparer.OrdinalIgnoreCase)
+                            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
                         foreach (DataRow row in dataTable.Rows)
                         {
-                            string serviceTag = row.Table.Columns.Contains("Device Service Tag") ? row["Device Service Tag"]?.ToString() : null;
+                            string serviceTag = row.Table.Columns.Contains("Device Service Tag") ? row["Device Service Tag"]?.ToString()?.Trim() :
+                                               (row.Table.Columns.Contains("Device Service Ta*") ? row["Device Service Ta*"]?.ToString()?.Trim() : null);
                             if (string.IsNullOrEmpty(serviceTag)) continue;
 
                             if (serversDict.TryGetValue(serviceTag, out Server server))
@@ -67,7 +68,25 @@ namespace BelbimEnv.Controllers
                                 }
                                 if (portTipi == default(PortTipiEnum)) continue;
 
-                                var port = new PortDetay { /* ... alan atamaları ... */ };
+                                var port = new PortDetay
+                                {
+                                    ServerId = server.Id,
+                                    PortTipi = portTipi,
+                                    LinkStatus = row.Table.Columns.Contains("Link Status") ? row["Link Status"]?.ToString() : null,
+                                    LinkSpeed = row.Table.Columns.Contains("Link Speed") ? row["Link Speed"]?.ToString() : (row.Table.Columns.Contains("Link Spee*") ? row["Link Spee*"]?.ToString() : null),
+                                    PortId = row.Table.Columns.Contains("Port ID") ? row["Port ID"]?.ToString() : (row.Table.Columns.Contains("Port-ID") ? row["Port-ID"]?.ToString() : null),
+                                    NicId = row.Table.Columns.Contains("NIC ID") ? row["NIC ID"]?.ToString() : null,
+                                    FiberMAC = row.Table.Columns.Contains("Fiber MAC") ? row["Fiber MAC"]?.ToString() : null,
+                                    BakirMAC = row.Table.Columns.Contains("Bakır MAC") ? row["Bakır MAC"]?.ToString() : null,
+                                    Wwpn = row.Table.Columns.Contains("WWPN") ? row["WWPN"]?.ToString() : null,
+                                    SwName = row.Table.Columns.Contains("SW NAME") ? row["SW NAME"]?.ToString() : null,
+                                    SwPort = row.Table.Columns.Contains("SW PORT") ? row["SW PORT"]?.ToString() : (row.Table.Columns.Contains("SW POR*") ? row["SW POR*"]?.ToString() : null),
+                                    SwdeUcMi = row.Table.Columns.Contains("Swde Up Mı?") ? row["Swde Up Mı?"]?.ToString() : (row.Table.Columns.Contains("Swde Uç mı?") ? row["Swde Uç mı?"]?.ToString() : null),
+                                    FcUcPortSayisi = row.Table.Columns.Contains("FC_Up Port Sayısı") && int.TryParse(row["FC_Up Port Sayısı"]?.ToString(), out int fcCount) ? fcCount : null,
+                                    BakirUplinkPort = row.Table.Columns.Contains("BakırUpPort") ? row["BakırUpPort"]?.ToString() : (row.Table.Columns.Contains("BakırUplinkPor*") ? row["BakırUplinkPor*"]?.ToString() : null),
+                                    UcPort = row.Table.Columns.Contains("Up Port") ? row["Up Port"]?.ToString() : null
+                                };
+
                                 port.Aciklama = GeneratePortDescription(port, server);
                                 portsToImport.Add(port);
                             }
@@ -95,7 +114,10 @@ namespace BelbimEnv.Controllers
                 if (notFoundServiceTags.Any()) { TempData["WarningMessage"] = $"{successMessage} Ancak şu Service Tag'lere sahip sunucular bulunamadığı için bu portlar atlandı: {string.Join(", ", notFoundServiceTags)}"; }
                 else { TempData["SuccessMessage"] = successMessage; }
             }
-            catch (Exception ex) { TempData["ErrorMessage"] = $"Veritabanına kayıt sırasında hata: {ex.Message}"; }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Veritabanına kayıt sırasında hata: {ex.InnerException?.Message ?? ex.Message}";
+            }
             return RedirectToAction(nameof(ListAll));
         }
 
@@ -103,27 +125,21 @@ namespace BelbimEnv.Controllers
         {
             string deviceName = server.HostDns ?? "UnknownServer";
             string macAddress = "";
-
             if (port.PortTipi == PortTipiEnum.Bakir || port.PortTipi == PortTipiEnum.VirtualBakir) macAddress = port.BakirMAC;
             else if (port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC) macAddress = port.FiberMAC;
             else if (port.PortTipi == PortTipiEnum.SAN) macAddress = port.Wwpn;
-
             string lastFourDigits = "XXXX";
             if (!string.IsNullOrEmpty(macAddress))
             {
                 string cleanMac = new string(macAddress.Where(char.IsLetterOrDigit).ToArray());
                 if (cleanMac.Length >= 4) { lastFourDigits = new string(cleanMac.TakeLast(4).ToArray()).ToUpper(); }
             }
-
             string typeInitial = port.PortTipi.ToString().ToUpper().FirstOrDefault().ToString();
-
             string countInfo = "0";
             if ((port.PortTipi == PortTipiEnum.Bakir || port.PortTipi == PortTipiEnum.VirtualBakir) && !string.IsNullOrEmpty(port.BakirUplinkPort)) { countInfo = port.BakirUplinkPort; }
             else if ((port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC) && port.FcUcPortSayisi.HasValue) { countInfo = port.FcUcPortSayisi.Value.ToString(); }
-
             return $"{deviceName}_{lastFourDigits}_{typeInitial}_{countInfo}";
         }
-
 
         public async Task<IActionResult> Details(int? id)
         {
@@ -133,7 +149,6 @@ namespace BelbimEnv.Controllers
             return View(portDetay);
         }
 
-        // GÜNCELLENMİŞ METOT
         public async Task<IActionResult> ListAll(string sortOrder)
         {
             ViewData["CurrentSort"] = sortOrder;

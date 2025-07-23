@@ -187,7 +187,7 @@ namespace BelbimEnv.Controllers
                                 Location = row.Table.Columns.Contains("Location") ? row["Location"]?.ToString() : null,
                                 OS = row.Table.Columns.Contains("o/s") ? row["o/s"]?.ToString() : null,
                                 IloIdracIp = row.Table.Columns.Contains("ilo/idrac ip") ? row["ilo/idrac ip"]?.ToString() : null,
-                                Kabin = row.Table.Columns.Contains("_kabin") ? row["_kabin"]?.ToString() : null,
+                                Kabin = row.Table.Columns.Contains("_akabin") ? row["_akabin"]?.ToString() : null,
                                 RearFront = row.Table.Columns.Contains("Rear/Front") ? row["Rear/Front"]?.ToString() : null,
                                 KabinU = row.Table.Columns.Contains("kabin_u") ? row["kabin_u"]?.ToString() : null,
                                 IsttelkomEtiketId = row.Table.Columns.Contains("İsttelkom Etiket I") ? row["İsttelkom Etiket I"]?.ToString() : null,
