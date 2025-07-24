@@ -2,7 +2,7 @@
 
 @{
     var colorMap = new Dictionary<string, string>();
-    var colors = new List<string> { "#6c757d", "#198754", "#dc3545", "#fd7e14", "#ffc107", "#0dcaf0" }; // Dolu sunucu renkleri
+    var colors = new List<string> { "#0d6efd", "#6f42c1", "#198754", "#dc3545", "#fd7e14", "#20c997", "#6c757d" };
     int colorIndex = 0;
 }
 
@@ -19,57 +19,59 @@
 
     @foreach (var rack in Model.Racks)
     {
-        var processedServerIds = new HashSet<int>();
+        var processedUnits = new HashSet<int>();
         <div class="rack-wrapper">
             <div class="rack-header">@rack.Key</div>
             <div class="rack" data-rack-name="@rack.Key.Split(' ')[0]" data-rack-side="@(rack.Key.Contains("(Ön)") ? "F" : "R")">
-                <div class="rack-side left">@for (int i = 42; i >= 1; i--) {
-                <div class="u-hole">@i</div>
-            }
-</div>
-            <div class="rack-middle">
-                <div class="rack-units">
-                    @{
-                        var sortedUnits = rack.Value.OrderByDescending(u => u.U_Number).ToList();
-                    }
-                    @for (int i = 0; i < sortedUnits.Count; i++)
+                <div class="rack-side left">
+                    @for (int i = 42; i >= 1; i--)
                     {
-                        var unit = sortedUnits[i];
-                        if (unit.IsOccupied)
+                        <div class="u-hole">@i</div>
+                    }
+                </div>
+                <div class="rack-middle">
+                    <div class="rack-units">
+                        @foreach (var unit in rack.Value.OrderByDescending(u => u.U_Number))
                         {
-                            var firstServer = unit.OccupyingServers.First();
-                            if (!processedServerIds.Contains(firstServer.Id))
+                            if (processedUnits.Contains(unit.U_Number)) { continue; }
+
+                            if (unit.IsOccupied)
                             {
-                                processedServerIds.Add(firstServer.Id);
-                                int uSpan = rack.Value.Count(u => u.IsOccupied && u.OccupyingServers.Contains(firstServer));
+                                var serversInThisBlock = unit.OccupyingServers;
+                                var firstServer = serversInThisBlock.First();
+                                int uSpan = rack.Value.Count(u => u.IsOccupied && u.OccupyingServers.Any(s => s.Id == firstServer.Id));
                                 int height = (uSpan * 20) - 2;
+                                for (int u = unit.U_Number; u > unit.U_Number - uSpan; u--) { processedUnits.Add(u); }
 
-                                if (!colorMap.ContainsKey(firstServer.Model)) { colorMap[firstServer.Model] = colors[colorIndex++ % colors.Count]; }
-
-                                <div class="occupied-server-block" style="height: @(height)px; background-color: @colorMap[firstServer.Model];">
-                                    @foreach (var server in unit.OccupyingServers)
+                                <div class="server-block" style="height: @(height)px;">
+                                    @foreach (var server in serversInThisBlock.OrderBy(s => s.HostDns))
                                     {
-                                        <div class="occupied-server-sub-block" title="@server.HostDns">
-                                            <span class="server-name">@server.HostDns</span>
-                                            <span class="server-u">@server.KabinU</span>
+                                        if (!colorMap.ContainsKey(server.Model ?? "default")) { colorMap[server.Model ?? "default"] = colors[colorIndex++ % colors.Count]; }
+                                        string serverColor = colorMap[server.Model ?? "default"];
+                                        <div class="server-sub-block" style="background-color: @serverColor;" title="@server.HostDns">
+                                            <div class="server-link">
+                                                <span class="server-name">@server.HostDns</span>
+                                                <span class="server-u">@server.KabinU</span>
+                                            </div>
                                         </div>
                                     }
                                 </div>
-                                i += (uSpan - 1);
+                            }
+                            else
+                            {
+                                <div class="empty-unit selectable-u" data-u="@unit.U_Number"></div>
+                                processedUnits.Add(unit.U_Number);
                             }
                         }
-                        else
-                        {
-                            <div class="empty-unit selectable-u" data-u="@unit.U_Number"></div>
-                        }
+                    </div>
+                </div>
+                <div class="rack-side right">
+                    @for (int i = 42; i >= 1; i--)
+                    {
+                        <div class="u-hole">@i</div>
                     }
                 </div>
             </div>
-            <div class="rack-side right">@for (int i = 42; i >= 1; i--) {
-            <div class="u-hole">@i</div>
-                        }
-</div>
         </div>
-    </div>
-        }
+    }
 </div>

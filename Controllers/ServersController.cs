@@ -1,7 +1,8 @@
 ﻿using BelbimEnv.Data;
+using BelbimEnv.Helpers;
 using BelbimEnv.Models;
-using ClosedXML.Excel;
 using ExcelDataReader;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,12 +15,16 @@ using System.Threading.Tasks;
 
 namespace BelbimEnv.Controllers
 {
+    [Authorize]
     public class ServersController : Controller
     {
         private readonly ApplicationDbContext _context;
-        public ServersController(ApplicationDbContext context) { _context = context; }
 
-        // GÜNCELLENMİŞ METOT: SIRALAMA ÖZELLİĞİ EKLENDİ
+        public ServersController(ApplicationDbContext context)
+        {
+            _context = context;
+        }
+
         public async Task<IActionResult> Index(string sortOrder)
         {
             ViewData["CurrentSort"] = sortOrder;
@@ -52,55 +57,6 @@ namespace BelbimEnv.Controllers
             return View(await servers.AsNoTracking().ToListAsync());
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ExportToExcel(ExportViewModel model)
-        {
-            var selectedColumns = model.Columns.Where(c => c.IsSelected).Select(c => c.Name).ToList();
-            if (!selectedColumns.Any())
-            {
-                TempData["ErrorMessage"] = "Lütfen dışarı aktarmak için en az bir sütun seçin.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var servers = await _context.Servers.AsNoTracking().ToListAsync();
-
-            using (var workbook = new XLWorkbook())
-            {
-                var worksheet = workbook.Worksheets.Add("Sunucular");
-                var currentRow = 1;
-
-                // Başlıkları oluştur
-                for (int i = 0; i < selectedColumns.Count; i++)
-                {
-                    worksheet.Cell(currentRow, i + 1).Value = selectedColumns[i];
-                }
-
-                // Verileri ekle
-                foreach (var server in servers)
-                {
-                    currentRow++;
-                    for (int i = 0; i < selectedColumns.Count; i++)
-                    {
-                        var propertyValue = typeof(Server).GetProperty(selectedColumns[i])?.GetValue(server, null);
-                        worksheet.Cell(currentRow, i + 1).Value = propertyValue?.ToString() ?? "";
-                    }
-                }
-
-                // Sütunları otomatik genişlet
-                worksheet.Columns().AdjustToContents();
-
-                // Dosyayı bellekte oluştur ve indir
-                using (var stream = new MemoryStream())
-                {
-                    workbook.SaveAs(stream);
-                    var content = stream.ToArray();
-                    string excelName = $"Sunucu_Envanter_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
-                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelName);
-                }
-            }
-        }
-
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -109,22 +65,97 @@ namespace BelbimEnv.Controllers
             return View(server);
         }
 
-        public IActionResult Create() => View();
+        public async Task<IActionResult> Create()
+        {
+            // ===== BU BÖLÜM LOKASYON LİSTESİNİ SAYFAYA GÖNDERİR =====
+            ViewBag.ExistingLocations = await _context.Servers
+                .Where(s => !string.IsNullOrEmpty(s.Location))
+                .Select(s => s.Location!)
+                .Distinct()
+                .OrderBy(l => l)
+                .ToListAsync();
+            return View();
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Server server)
         {
+            if (!string.IsNullOrEmpty(server.Location))
+            {
+                server.Location = server.Location.Trim();
+            }
+
             if (ModelState.IsValid)
             {
-                server.DateAdded = DateTime.Now;
-                server.LastUpdated = DateTime.Now;
-                _context.Add(server);
+                _context.Servers.Add(server);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Yeni sunucu başarıyla eklendi.";
                 return RedirectToAction(nameof(Index));
             }
+
+            // Hata durumunda lokasyon listesini tekrar gönder.
+            ViewBag.ExistingLocations = await _context.Servers
+                .Where(s => !string.IsNullOrEmpty(s.Location))
+                .Select(s => s.Location!)
+                .Distinct()
+                .OrderBy(l => l)
+                .ToListAsync();
+
             return View(server);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> CheckKabinKonum(string kabin, string kabinU, string rearFront, int serverIdToIgnore = 0)
+        {
+            if (string.IsNullOrEmpty(kabin) || string.IsNullOrEmpty(kabinU) || string.IsNullOrEmpty(rearFront))
+            {
+                return Ok(new { isValid = true });
+            }
+
+            var (startU, endU) = RackHelper.ParseKabinU(kabinU);
+            if (startU == 0)
+            {
+                return Ok(new { isValid = false, type = "error", message = "Geçersiz Kabin U formatı." });
+            }
+
+            var conflictingServers = await _context.Servers
+                .Where(s => s.Id != serverIdToIgnore && s.Kabin == kabin && !string.IsNullOrEmpty(s.KabinU))
+                .ToListAsync();
+
+            var potentialConflicts = new List<Server>();
+            foreach (var s in conflictingServers)
+            {
+                var (existingStartU, existingEndU) = RackHelper.ParseKabinU(s.KabinU);
+                if (Math.Max(startU, existingStartU) <= Math.Min(endU, existingEndU))
+                {
+                    potentialConflicts.Add(s);
+                }
+            }
+
+            if (!potentialConflicts.Any())
+            {
+                return Ok(new { isValid = true });
+            }
+
+            var newDirections = rearFront.ToUpper().Split('-');
+
+            foreach (var conflict in potentialConflicts)
+            {
+                var existingDirections = conflict.RearFront?.ToUpper().Split('-') ?? Array.Empty<string>();
+                if (newDirections.Any(nd => existingDirections.Contains(nd)))
+                {
+                    return Ok(new { isValid = false, type = "error", message = $"Bu konum veya bir kısmı zaten '{conflict.HostDns}' tarafından kullanılıyor." });
+                }
+            }
+
+            var oppositeServer = potentialConflicts.FirstOrDefault();
+            if (oppositeServer != null)
+            {
+                return Ok(new { isValid = false, type = "warning", message = $"Bu konumun karşı tarafı '{oppositeServer.HostDns}' tarafından kullanılıyor. Yine de eklemek istediğinize emin misiniz?" });
+            }
+
+            return Ok(new { isValid = true });
         }
 
         public async Task<IActionResult> Edit(int? id)
@@ -148,7 +179,8 @@ namespace BelbimEnv.Controllers
                     if (serverFromDb == null) return NotFound();
                     serverFromForm.DateAdded = serverFromDb.DateAdded;
                     serverFromForm.LastUpdated = DateTime.Now;
-                    _context.Update(serverFromForm);
+
+                    _context.Servers.Update(serverFromForm);
                     await _context.SaveChangesAsync();
                     TempData["SuccessMessage"] = "Sunucu bilgileri başarıyla güncellendi.";
                 }
@@ -177,8 +209,6 @@ namespace BelbimEnv.Controllers
             var server = await _context.Servers.FindAsync(id);
             if (server != null)
             {
-                var relatedPorts = _context.PortDetaylari.Where(p => p.ServerId == id);
-                _context.PortDetaylari.RemoveRange(relatedPorts);
                 _context.Servers.Remove(server);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Sunucu ve ilişkili portları başarıyla silindi.";
@@ -237,7 +267,7 @@ namespace BelbimEnv.Controllers
                                 Location = row.Table.Columns.Contains("Location") ? row["Location"]?.ToString() : null,
                                 OS = row.Table.Columns.Contains("o/s") ? row["o/s"]?.ToString() : null,
                                 IloIdracIp = row.Table.Columns.Contains("ilo/idrac ip") ? row["ilo/idrac ip"]?.ToString() : null,
-                                Kabin = row.Table.Columns.Contains("_akabin") ? row["_akabin"]?.ToString() : null,
+                                Kabin = row.Table.Columns.Contains("_akabin") ? row["_akabin"]?.ToString() : (row.Table.Columns.Contains("_kabin") ? row["_kabin"]?.ToString() : null),
                                 RearFront = row.Table.Columns.Contains("Rear/Front") ? row["Rear/Front"]?.ToString() : null,
                                 KabinU = row.Table.Columns.Contains("kabin_u") ? row["kabin_u"]?.ToString() : null,
                                 IsttelkomEtiketId = row.Table.Columns.Contains("İsttelkom Etiket I") ? row["İsttelkom Etiket I"]?.ToString() : null,
@@ -257,7 +287,7 @@ namespace BelbimEnv.Controllers
 
             if (!serversToImport.Any())
             {
-                TempData["ErrorMessage"] = "Excel dosyasında işlenecek geçerli veri bulunamadı.";
+                TempData["WarningMessage"] = "Excel dosyasında işlenecek geçerli veri bulunamadı.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -265,14 +295,13 @@ namespace BelbimEnv.Controllers
             {
                 if (importOption == "replace")
                 {
-                    _context.PortDetaylari.RemoveRange(_context.PortDetaylari);
                     _context.Servers.RemoveRange(_context.Servers);
                     await _context.SaveChangesAsync();
                 }
 
                 await _context.Servers.AddRangeAsync(serversToImport);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = $"{serversToImport.Count} kayıt başarıyla yüklendi.";
+                TempData["SuccessMessage"] = $"{serversToImport.Count} sunucu başarıyla yüklendi.";
             }
             catch (Exception ex)
             {

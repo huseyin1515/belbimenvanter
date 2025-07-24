@@ -1,5 +1,7 @@
 ﻿using BelbimEnv.Data;
+using BelbimEnv.Helpers;
 using BelbimEnv.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -9,6 +11,7 @@ using System.Threading.Tasks;
 
 namespace BelbimEnv.Controllers
 {
+    [Authorize]
     public class VisualizationController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -23,7 +26,7 @@ namespace BelbimEnv.Controllers
         {
             var allLocations = await _context.Servers
                 .Where(s => !string.IsNullOrEmpty(s.Location))
-                .Select(s => s.Location)
+                .Select(s => s.Location!)
                 .Distinct()
                 .OrderBy(l => l)
                 .ToListAsync();
@@ -45,7 +48,7 @@ namespace BelbimEnv.Controllers
 
             var server = await _context.Servers
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.HostDns.Contains(searchTerm) || s.ServiceTag.Contains(searchTerm));
+                .FirstOrDefaultAsync(s => (s.HostDns ?? "").Contains(searchTerm) || (s.ServiceTag ?? "").Contains(searchTerm));
 
             if (server == null)
             {
@@ -67,7 +70,7 @@ namespace BelbimEnv.Controllers
             if (string.IsNullOrEmpty(location)) { return RedirectToAction(nameof(Index)); }
 
             var allServers = await _context.Servers.AsNoTracking().ToListAsync();
-            var allLocations = allServers.Where(s => !string.IsNullOrEmpty(s.Location)).Select(s => s.Location).Distinct().OrderBy(l => l).ToList();
+            var allLocations = allServers.Where(s => !string.IsNullOrEmpty(s.Location)).Select(s => s.Location!).Distinct().OrderBy(l => l).ToList();
             var viewModel = new RackVisualizationViewModel
             {
                 AllLocations = allLocations,
@@ -75,7 +78,8 @@ namespace BelbimEnv.Controllers
             };
 
             var serversInLocation = allServers.Where(s => s.Location == location && !string.IsNullOrEmpty(s.Kabin) && !string.IsNullOrEmpty(s.KabinU)).ToList();
-            var cabinetsInLocation = serversInLocation.Select(s => s.Kabin).Distinct().OrderBy(c => c);
+
+            var cabinetsInLocation = serversInLocation.Select(s => s.Kabin!).Distinct().OrderBy(c => c);
 
             foreach (var cabinetName in cabinetsInLocation)
             {
@@ -85,14 +89,25 @@ namespace BelbimEnv.Controllers
 
                 foreach (var server in serversInCabinet)
                 {
-                    var (startU, endU) = ParseKabinU(server.KabinU);
+                    var (startU, endU) = RackHelper.ParseKabinU(server.KabinU);
                     if (startU == 0 || endU == 0) continue;
-                    var targetMap = (server.RearFront == "R" || server.RearFront == "Rear") ? rearU_Map : frontU_Map;
 
-                    for (int u = startU; u <= endU; u++)
+                    var directions = server.RearFront?.ToUpper().Split(new[] { '-', ' ' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+
+                    foreach (var dir in directions)
                     {
-                        if (!targetMap.ContainsKey(u)) { targetMap[u] = new List<Server>(); }
-                        targetMap[u].Add(server);
+                        Dictionary<int, List<Server>>? targetMap = null;
+                        if (dir.StartsWith("R")) targetMap = rearU_Map;
+                        else if (dir.StartsWith("F")) targetMap = frontU_Map;
+
+                        if (targetMap != null)
+                        {
+                            for (int u = startU; u <= endU; u++)
+                            {
+                                if (!targetMap.ContainsKey(u)) { targetMap[u] = new List<Server>(); }
+                                targetMap[u].Add(server);
+                            }
+                        }
                     }
                 }
 
@@ -110,13 +125,12 @@ namespace BelbimEnv.Controllers
             return View(viewModel);
         }
 
-        // YENİ EKLENEN METOT
         public async Task<IActionResult> RackSelector(string location, int serverIdToIgnore = 0)
         {
             if (string.IsNullOrEmpty(location))
             {
                 var allLocations = await _context.Servers.Where(s => !string.IsNullOrEmpty(s.Location))
-                                                        .Select(s => s.Location).Distinct().OrderBy(l => l).ToListAsync();
+                                                        .Select(s => s.Location!).Distinct().OrderBy(l => l).ToListAsync();
                 return PartialView("_RackSelectorLocations", allLocations);
             }
 
@@ -127,8 +141,7 @@ namespace BelbimEnv.Controllers
             var viewModel = new RackVisualizationViewModel { SelectedLocation = location };
             var serversInLocation = allServers.Where(s => s.Location == location && !string.IsNullOrEmpty(s.Kabin) && !string.IsNullOrEmpty(s.KabinU)).ToList();
 
-            // Lokasyondaki tüm kabinleri al (içleri boş bile olsa)
-            var cabinetsInLocation = allServers.Where(s => s.Location == location && !string.IsNullOrEmpty(s.Kabin)).Select(s => s.Kabin).Distinct().OrderBy(c => c);
+            var cabinetsInLocation = allServers.Where(s => s.Location == location && !string.IsNullOrEmpty(s.Kabin)).Select(s => s.Kabin!).Distinct().OrderBy(c => c);
 
             foreach (var cabinetName in cabinetsInLocation)
             {
@@ -138,13 +151,25 @@ namespace BelbimEnv.Controllers
 
                 foreach (var server in serversInCabinet)
                 {
-                    var (startU, endU) = ParseKabinU(server.KabinU);
+                    var (startU, endU) = RackHelper.ParseKabinU(server.KabinU);
                     if (startU == 0 || endU == 0) continue;
-                    var targetMap = (server.RearFront == "R" || server.RearFront == "Rear") ? rearU_Map : frontU_Map;
-                    for (int u = startU; u <= endU; u++)
+
+                    var directions = server.RearFront?.ToUpper().Split(new[] { '-', ' ' }, StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>();
+
+                    foreach (var dir in directions)
                     {
-                        if (!targetMap.ContainsKey(u)) { targetMap[u] = new List<Server>(); }
-                        targetMap[u].Add(server);
+                        Dictionary<int, List<Server>>? targetMap = null;
+                        if (dir.StartsWith("R")) targetMap = rearU_Map;
+                        else if (dir.StartsWith("F")) targetMap = frontU_Map;
+
+                        if (targetMap != null)
+                        {
+                            for (int u = startU; u <= endU; u++)
+                            {
+                                if (!targetMap.ContainsKey(u)) { targetMap[u] = new List<Server>(); }
+                                targetMap[u].Add(server);
+                            }
+                        }
                     }
                 }
 
@@ -160,28 +185,6 @@ namespace BelbimEnv.Controllers
                 viewModel.Racks[cabinetName + " (Arka)"] = rearUnits;
             }
             return PartialView("_RackSelector", viewModel);
-        }
-
-        private (int, int) ParseKabinU(string kabinU)
-        {
-            if (string.IsNullOrWhiteSpace(kabinU)) return (0, 0);
-            try
-            {
-                if (kabinU.Contains('-'))
-                {
-                    var parts = kabinU.Split('-');
-                    if (parts.Length == 2 && int.TryParse(parts[0].Trim(), out int start) && int.TryParse(parts[1].Trim(), out int end))
-                    {
-                        return (Math.Min(start, end), Math.Max(start, end));
-                    }
-                }
-                else if (int.TryParse(kabinU.Trim(), out int singleU))
-                {
-                    return (singleU, singleU);
-                }
-            }
-            catch { return (0, 0); }
-            return (0, 0);
         }
     }
 }

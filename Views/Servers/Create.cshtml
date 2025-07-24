@@ -1,7 +1,9 @@
 ﻿@model BelbimEnv.Models.Server
+@Html.AntiForgeryToken()
 
 @{
     ViewData["Title"] = "Yeni Sunucu Ekle";
+    var existingLocations = ViewBag.ExistingLocations as List<string> ?? new List<string>();
 }
 
 <!-- KABİN SEÇİCİ MODAL PENCERESİ -->
@@ -29,7 +31,7 @@
 
 <div class="row">
     <div class="col-md-8">
-        <form asp-action="Create" method="post">
+        <form asp-action="Create" method="post" id="createServerForm">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <h5 class="mt-2">Temel Kimlik Bilgileri</h5>
@@ -53,20 +55,55 @@
             <h5 class="mt-4">Fiziksel Konum</h5>
             <hr class="mt-1" />
             <div class="row g-3 align-items-end">
-                <div class="form-group col-md-8"><label asp-for="Location" class="control-label"></label><input asp-for="Location" class="form-control" id="locationInput" /><span asp-validation-for="Location" class="text-danger"></span></div>
+                <div class="form-group col-md-8">
+                    <label asp-for="Location" class="control-label"></label>
+                    <select id="locationSelector" class="form-select">
+                        <option value="" selected>Mevcut bir lokasyon seçin...</option>
+                        @foreach (var loc in existingLocations)
+                        {
+                            <option value="@loc">@loc</option>
+                        }
+                        <option value="__addNew">** Yeni Lokasyon Ekle **</option>
+                    </select>
+                    <div id="newLocationContainer" class="mt-2" style="display: none;">
+                        <input type="text" id="newLocationInput" class="form-control" placeholder="Yeni lokasyon adını girin" />
+                    </div>
+                    <input type="hidden" asp-for="Location" id="locationInput" />
+                    <span asp-validation-for="Location" class="text-danger"></span>
+                </div>
                 <div class="form-group col-md-4"><label asp-for="IloIdracIp" class="control-label"></label><input asp-for="IloIdracIp" class="form-control" /><span asp-validation-for="IloIdracIp" class="text-danger"></span></div>
-
                 <div class="col-12 mt-3">
                     <label class="form-label">Kabin Konumu</label>
                     <div id="selection-summary" class="alert alert-secondary p-2">Henüz bir konum seçilmedi.</div>
-                    <button type="button" id="openRackSelectorBtn" class="btn btn-outline-primary"><i class="fas fa-th me-1"></i> Görsel Olarak Konum Seç</button>
+                    <div class="btn-group">
+                        <button type="button" id="openRackSelectorBtn" class="btn btn-outline-primary"><i class="fas fa-th me-1"></i> Görsel Olarak Seç</button>
+                        <button type="button" id="openManualEntryBtn" class="btn btn-outline-secondary"><i class="fas fa-keyboard me-1"></i> Manuel Olarak Gir</button>
+                    </div>
                 </div>
-
+                <div id="manualEntryContainer" class="col-12 mt-3 p-3 border rounded bg-light" style="display: none;">
+                    <h6>Manuel Konum Girişi</h6>
+                    <div class="row g-3 align-items-end">
+                        <div class="col-md-4"><label for="manualKabinInput" class="form-label">Kabin Adı</label><input type="text" id="manualKabinInput" class="form-control"></div>
+                        <div class="col-md-3"><label for="manualKabinUInput" class="form-label">Kabin U Aralığı</label><input type="text" id="manualKabinUInput" class="form-control" placeholder="Örn: 5 veya 10-12"></div>
+                        <div class="col-md-3">
+                            <label for="manualRearFrontInput" class="form-label">Yön</label>
+                            <select id="manualRearFrontInput" class="form-select">
+                                <option value="" selected disabled>Seçiniz...</option>
+                                <option value="F">Ön (Front)</option>
+                                <option value="R">Arka (Rear)</option>
+                                <option value="F-R">Ön ve Arka</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" id="applyManualLocationBtn" class="btn btn-success w-100">Uygula</button>
+                        </div>
+                    </div>
+                    <div id="manualEntryError" class="text-danger mt-2"></div>
+                </div>
                 <input type="hidden" asp-for="Kabin" id="hiddenKabin" />
                 <input type="hidden" asp-for="KabinU" id="hiddenKabinU" />
                 <input type="hidden" asp-for="RearFront" id="hiddenRearFront" />
             </div>
-
             <div class="form-group mt-4">
                 <input type="submit" value="Yeni Sunucu Oluştur" class="btn btn-primary" />
                 <a asp-action="Index" class="btn btn-outline-secondary">Listeye Dön</a>
@@ -79,99 +116,181 @@
     <partial name="_ValidationScriptsPartial" />
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+            const locationSelector = document.getElementById('locationSelector');
+            const newLocationContainer = document.getElementById('newLocationContainer');
+            const newLocationInput = document.getElementById('newLocationInput');
+            const hiddenLocationInput = document.getElementById('locationInput');
+            locationSelector.addEventListener('change', function() {
+                if (this.value === '__addNew') {
+                    newLocationContainer.style.display = 'block';
+                    newLocationInput.value = '';
+                    newLocationInput.focus();
+                    hiddenLocationInput.value = '';
+                } else {
+                    newLocationContainer.style.display = 'none';
+                    hiddenLocationInput.value = this.value;
+                }
+            });
+            newLocationInput.addEventListener('input', function() {
+                hiddenLocationInput.value = this.value;
+            });
             const modal = new bootstrap.Modal(document.getElementById('rackSelectorModal'));
             const modalBody = document.getElementById('rackSelectorBody');
-            const openModalBtn = document.getElementById('openRackSelectorBtn');
             const confirmBtn = document.getElementById('confirmSelectionBtn');
             const selectionInfo = document.getElementById('selectionInfo');
-            const selectionSummary = document.getElementById('selection-summary');
-
-            let selectedRack = null;
-            let selectedUnits = [];
-
-            function loadModalContent(location = '') {
-                modalBody.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
-                let url = `/Visualization/RackSelector?location=${encodeURIComponent(location)}`;
-                fetch(url)
-                    .then(response => response.text())
-                    .then(html => { modalBody.innerHTML = html; });
-            }
-
-            openModalBtn.addEventListener('click', function () {
-                loadModalContent();
-                modal.show();
+            let selectedRackName = null;
+            let selectedFrontUnits = [];
+            let selectedRearUnits = [];
+            document.getElementById('rackSelectorModal').addEventListener('show.bs.modal', function () {
+                selectedRackName = null;
+                selectedFrontUnits = [];
+                selectedRearUnits = [];
+                updateSelectionInfo();
             });
-
             modalBody.addEventListener('click', function (e) {
+                if (e.target.classList.contains('selectable-u')) {
+                    const rackElement = e.target.closest('.rack');
+                    const currentRackName = rackElement.dataset.rackName;
+                    const currentRackSide = rackElement.dataset.rackSide;
+                    const unitNumber = parseInt(e.target.dataset.u);
+                    if (selectedRackName && selectedRackName !== currentRackName) {
+                        document.querySelectorAll('.selected-u').forEach(u => u.classList.remove('selected-u'));
+                        selectedFrontUnits = [];
+                        selectedRearUnits = [];
+                    }
+                    selectedRackName = currentRackName;
+                    e.target.classList.toggle('selected-u');
+                    const targetUnitArray = currentRackSide === 'F' ? selectedFrontUnits : selectedRearUnits;
+                    if (targetUnitArray.includes(unitNumber)) {
+                        const index = targetUnitArray.indexOf(unitNumber);
+                        targetUnitArray.splice(index, 1);
+                    } else {
+                        targetUnitArray.push(unitNumber);
+                    }
+                    updateSelectionInfo();
+                }
                 if (e.target.classList.contains('location-select-btn')) {
                     loadModalContent(e.target.dataset.location);
                 }
-                if (e.target.classList.contains('selectable-u')) {
-                    const currentRack = e.target.closest('.rack');
-                    if (selectedRack && selectedRack !== currentRack) {
-                        selectedRack.querySelectorAll('.selected-u').forEach(u => u.classList.remove('selected-u'));
-                        selectedUnits = [];
-                    }
-                    selectedRack = currentRack;
-                    e.target.classList.toggle('selected-u');
-
-                    selectedUnits = Array.from(selectedRack.querySelectorAll('.selected-u'))
-                                        .map(u => parseInt(u.dataset.u))
-                                        .sort((a, b) => a - b);
-
-                    updateSelectionInfo();
-                }
-                 if (e.target.id === 'backToLocationsBtn') {
+                if (e.target.id === 'backToLocationsBtn') {
                     loadModalContent();
                 }
             });
-
             function updateSelectionInfo() {
-                if (selectedUnits.length === 0) {
+                const allUnits = [...selectedFrontUnits, ...selectedRearUnits].sort((a, b) => a - b);
+                if (allUnits.length === 0) {
                     selectionInfo.textContent = "Seçim Yapılmadı";
                     confirmBtn.disabled = true;
-                } else if (selectedUnits.length === 1) {
-                    selectionInfo.textContent = `Seçilen: U ${selectedUnits[0]}`;
-                    confirmBtn.disabled = false;
-                } else {
-                    let isConsecutive = true;
-                    for (let i = 0; i < selectedUnits.length - 1; i++) {
-                        if (selectedUnits[i+1] !== selectedUnits[i] + 1) { isConsecutive = false; break; }
-                    }
-
-                    if (isConsecutive) {
-                        selectionInfo.textContent = `Seçilen: U ${selectedUnits[0]}-${selectedUnits[selectedUnits.length - 1]}`;
-                        confirmBtn.disabled = false;
-                    } else {
-                        selectionInfo.textContent = "HATA: Lütfen ardışık U'lar seçin.";
-                        confirmBtn.disabled = true;
+                    return;
+                }
+                const minU = Math.min(...allUnits);
+                const maxU = Math.max(...allUnits);
+                let isConsecutive = true;
+                for (let i = minU; i <= maxU; i++) {
+                    if (!allUnits.includes(i)) {
+                        isConsecutive = false;
+                        break;
                     }
                 }
+                if (!isConsecutive) {
+                    selectionInfo.textContent = "HATA: Lütfen ardışık U'lar seçin.";
+                    confirmBtn.disabled = true;
+                    return;
+                }
+                let sideText = "";
+                if (selectedFrontUnits.length > 0 && selectedRearUnits.length > 0) sideText = "Ön ve Arka";
+                else if (selectedFrontUnits.length > 0) sideText = "Ön";
+                else if (selectedRearUnits.length > 0) sideText = "Arka";
+                const uText = minU === maxU ? `U ${minU}` : `U ${minU}-${maxU}`;
+                selectionInfo.textContent = `Seçilen: ${selectedRackName} - ${sideText} - ${uText}`;
+                confirmBtn.disabled = false;
             }
-
             confirmBtn.addEventListener('click', function() {
-                if (!selectedRack || selectedUnits.length === 0) return;
-
-                const rackName = selectedRack.dataset.rackName;
-                const rackSide = selectedRack.dataset.rackSide;
-                const uRange = selectedUnits.length === 1 ? selectedUnits[0].toString() : `${selectedUnits[0]}-${selectedUnits[selectedUnits.length - 1]}`;
-
-                document.getElementById('hiddenKabin').value = rackName;
-                document.getElementById('hiddenKabinU').value = uRange;
-                document.getElementById('hiddenRearFront').value = rackSide;
-                document.getElementById('locationInput').value = document.querySelector('#rackSelectorBody h5').textContent.match(/\(([^)]+)\)/)[1];
-
-                selectionSummary.textContent = `Seçilen Konum: Kabin ${rackName} (${rackSide}), U Aralığı: ${uRange}`;
-                selectionSummary.classList.remove('alert-secondary');
+                if (confirmBtn.disabled) return;
+                const allUnits = [...selectedFrontUnits, ...selectedRearUnits];
+                const minU = Math.min(...allUnits);
+                const maxU = Math.max(...allUnits);
+                const uRange = minU === maxU ? minU.toString() : `${minU}-${maxU}`;
+                let rearFrontValue = "";
+                let sideTextForSummary = "";
+                if (selectedFrontUnits.length > 0 && selectedRearUnits.length > 0) { rearFrontValue = "F-R"; sideTextForSummary = "Ön ve Arka"; }
+                else if (selectedFrontUnits.length > 0) { rearFrontValue = "F"; sideTextForSummary = "Ön"; }
+                else if (selectedRearUnits.length > 0) { rearFrontValue = "R"; sideTextForSummary = "Arka"; }
+                hiddenKabin.value = selectedRackName;
+                hiddenKabinU.value = uRange;
+                hiddenRearFront.value = rearFrontValue;
+                const locationNameMatch = document.querySelector('#rackSelectorBody h5')?.textContent.match(/\(([^)]+)\)/);
+                if (locationNameMatch && locationNameMatch[1]) {
+                    hiddenLocationInput.value = locationNameMatch[1];
+                    locationSelector.value = locationNameMatch[1];
+                }
+                selectionSummary.textContent = `Seçilen Konum: Kabin ${selectedRackName} (${sideTextForSummary}), U Aralığı: ${uRange}`;
+                selectionSummary.classList.remove('alert-secondary', 'alert-danger');
                 selectionSummary.classList.add('alert-success');
-
                 modal.hide();
             });
-
-            document.getElementById('rackSelectorModal').addEventListener('hidden.bs.modal', function () {
-                 selectedRack = null;
-                 selectedUnits = [];
-                 updateSelectionInfo();
+            const openModalBtn = document.getElementById('openRackSelectorBtn');
+            const openManualEntryBtn = document.getElementById('openManualEntryBtn');
+            const manualEntryContainer = document.getElementById('manualEntryContainer');
+            const selectionSummary = document.getElementById('selection-summary');
+            const hiddenKabin = document.getElementById('hiddenKabin');
+            const hiddenKabinU = document.getElementById('hiddenKabinU');
+            const hiddenRearFront = document.getElementById('hiddenRearFront');
+            const applyManualLocationBtn = document.getElementById('applyManualLocationBtn');
+            const manualEntryError = document.getElementById('manualEntryError');
+            function loadModalContent(location = '') {
+                modalBody.innerHTML = '<div class="text-center"><div class="spinner-border"></div></div>';
+                let url = `/Visualization/RackSelector?location=${encodeURIComponent(location)}`;
+                fetch(url).then(response => response.text()).then(html => { modalBody.innerHTML = html; });
+            }
+            openModalBtn.addEventListener('click', function () {
+                manualEntryContainer.style.display = 'none';
+                const locationValue = hiddenLocationInput.value;
+                loadModalContent(locationValue);
+                modal.show();
+            });
+            openManualEntryBtn.addEventListener('click', function() {
+                manualEntryContainer.style.display = 'block';
+                manualEntryError.textContent = '';
+            });
+            applyManualLocationBtn.addEventListener('click', async function() {
+                manualEntryError.textContent = '';
+                const kabin = document.getElementById('manualKabinInput').value;
+                const kabinU = document.getElementById('manualKabinUInput').value;
+                const rearFrontSelect = document.getElementById('manualRearFrontInput');
+                const rearFront = rearFrontSelect.value;
+                if (!kabin || !kabinU || !rearFront) {
+                    manualEntryError.textContent = 'Lütfen tüm alanları doldurun.';
+                    return;
+                }
+                const response = await fetch('/Servers/CheckKabinKonum', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                    },
+                    body: `kabin=${encodeURIComponent(kabin)}&kabinU=${encodeURIComponent(kabinU)}&rearFront=${encodeURIComponent(rearFront)}`
+                });
+                const result = await response.json();
+                const applyChanges = () => {
+                    hiddenKabin.value = kabin;
+                    hiddenKabinU.value = kabinU;
+                    hiddenRearFront.value = rearFront;
+                    const yonText = rearFrontSelect.options[rearFrontSelect.selectedIndex].text;
+                    selectionSummary.textContent = `Seçilen Konum: Kabin ${kabin} (${yonText}), U Aralığı: ${kabinU}`;
+                    selectionSummary.classList.remove('alert-secondary', 'alert-danger');
+                    selectionSummary.classList.add('alert-success');
+                    manualEntryContainer.style.display = 'none';
+                };
+                if (result.isValid) { applyChanges(); }
+                else if (result.type === 'error') {
+                    manualEntryError.textContent = result.message;
+                    selectionSummary.textContent = result.message;
+                    selectionSummary.classList.remove('alert-secondary', 'alert-success');
+                    selectionSummary.classList.add('alert-danger');
+                } else if (result.type === 'warning') {
+                    if (confirm(result.message)) { applyChanges(); }
+                }
             });
         });
     </script>
@@ -179,87 +298,27 @@
 
 @section Styles {
     <style>
-        .rack-container.selectable .empty-unit.selectable-u {
-            transition: background-color 0.1s;
-        }
-
-            .rack-container.selectable .empty-unit.selectable-u:hover {
-                background-color: #a7d7f9;
-                cursor: pointer;
-            }
-
-        .rack-container.selectable .empty-unit.selected-u {
-            background-color: #0d6efd;
-            border: 1px solid #0a58ca;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8l2 2 4-4'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: center;
-        }
-
-        .rack-container.selectable .occupied-unit {
-            height: 18px;
-            margin-bottom: 2px;
-            background-color: #e9ecef;
-            border: 1px dashed #ced4da;
-        }
-
-        .occupied-server-block {
-            display: flex;
-            flex-direction: column;
-            justify-content: stretch;
-            border: 1px solid rgba(0,0,0,0.2);
-            border-radius: 3px;
-            overflow: hidden;
-            margin-bottom: 2px;
-            box-sizing: border-box;
-            color: white;
-            background-color: #6c757d;
-        }
-
-        .occupied-server-sub-block {
-            flex: 1;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 8px;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-            .occupied-server-sub-block .server-name {
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-
-            .occupied-server-sub-block .server-u {
-                background-color: rgba(0,0,0,0.3);
-                padding: 0 4px;
-                border-radius: 3px;
-            }
-
         .rack-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 20px;
+            gap: 40px;
             justify-content: center;
         }
 
         .rack-wrapper {
             display: flex;
             flex-direction: column;
-            width: 220px;
+            width: 320px;
         }
 
         .rack-header {
-            background-color: #6c757d;
+            background-color: #343a40;
             color: white;
-            padding: 5px;
+            padding: 8px 10px;
             font-weight: bold;
             text-align: center;
             border-top-left-radius: 5px;
             border-top-right-radius: 5px;
-            font-size: 0.9rem;
         }
 
         .rack {
@@ -268,6 +327,7 @@
             background-color: #f8f9fa;
             border: 1px solid #dee2e6;
             border-top: none;
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
         }
 
         .rack-side {
@@ -279,13 +339,14 @@
         }
 
         .u-hole {
-            width: 20px;
+            width: 25px;
             height: 18px;
             margin-bottom: 2px;
             color: #adb5bd;
-            font-size: 9px;
+            font-size: 10px;
             text-align: center;
-            line-height: 18px;
+            border-top: 1px solid #6c757d;
+            border-bottom: 1px solid #6c757d;
         }
 
         .rack-middle {
@@ -298,12 +359,61 @@
             flex-direction: column-reverse;
         }
 
-        .empty-unit {
-            height: 18px;
+        .empty-unit, .server-block, .occupied-server-block {
             margin-bottom: 2px;
             box-sizing: border-box;
-            background-image: linear-gradient(45deg, #f8f9fa 25%, #e9ecef 25%, #e9ecef 50%, #f8f9fa 50%, #f8f9fa 75%, #e9ecef 75%, #e9ecef 100%);
-            background-size: 8px 8px;
+        }
+
+        .empty-unit {
+            height: 18px;
+            background-image: linear-gradient(45deg, #e9ecef 25%, #dee2e6 25%, #dee2e6 50%, #e9ecef 50%, #e9ecef 75%, #dee2e6 75%, #dee2e6 100%);
+            background-size: 10px 10px;
+        }
+
+        .server-block, .occupied-server-block {
+            display: flex;
+            flex-direction: column;
+            justify-content: stretch;
+            border: 1px solid rgba(0,0,0,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .server-sub-block, .occupied-server-sub-block {
+            flex: 1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 8px;
+            color: white;
+            text-decoration: none;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        .server-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .server-u {
+            background-color: rgba(0,0,0,0.3);
+            padding: 0 4px;
+            border-radius: 3px;
+        }
+
+        .rack-container.selectable .empty-unit:hover {
+            background-color: #a7d7f9;
+            cursor: pointer;
+        }
+
+        .rack-container.selectable .empty-unit.selected-u {
+            background-color: #0d6efd;
+            border: 1px solid #0a58ca;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8l2 2 4-4'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: center;
         }
     </style>
 }

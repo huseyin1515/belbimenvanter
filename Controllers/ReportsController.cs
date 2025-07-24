@@ -1,13 +1,15 @@
-﻿// Controllers/ReportsController.cs
-using BelbimEnv.Data;
+﻿using BelbimEnv.Data;
 using BelbimEnv.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace BelbimEnv.Controllers
 {
+    [Authorize]
     public class ReportsController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -36,14 +38,24 @@ namespace BelbimEnv.Controllers
                 PortsByType = allPorts.GroupBy(p => p.PortTipi.ToString())
                                       .ToDictionary(g => g.Key, g => g.Count()),
 
-                PortsByLocation = allPorts.Where(p => p.Server != null && !string.IsNullOrEmpty(p.Server.Location))
-                                          .GroupBy(p => p.Server.Location)
+                // ===== UYARI İÇİN DÜZELTME BURADA =====
+                PortsByLocation = allPorts
+                                          .Where(p => p.Server != null && !string.IsNullOrEmpty(p.Server.Location)) // Null kontrolü eklendi
+                                          .GroupBy(p => p.Server.Location!)
                                           .ToDictionary(g => g.Key, g => g.Count()),
+                // =====================================
 
-                // YENİ HESAPLAMALAR
-                TopServersByPortCount = allServers.OrderByDescending(s => s.PortDetaylari.Count)
-                                                  .Take(5) // En çok porta sahip ilk 5 sunucu
-                                                  .ToDictionary(s => s.HostDns, s => s.PortDetaylari.Count),
+                TopServersByPortCount = allServers
+                    .Where(s => !string.IsNullOrEmpty(s.HostDns))
+                    .GroupBy(s => s.HostDns!)
+                    .Select(g => new
+                    {
+                        HostDns = g.Key,
+                        TotalPorts = g.Sum(s => s.PortDetaylari.Count)
+                    })
+                    .OrderByDescending(x => x.TotalPorts)
+                    .Take(5)
+                    .ToDictionary(x => x.HostDns, x => x.TotalPorts),
 
                 PortStatusDistribution = new Dictionary<string, int>
                 {

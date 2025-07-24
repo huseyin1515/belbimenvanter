@@ -1,4 +1,5 @@
 ﻿@model BelbimEnv.Models.RackVisualizationViewModel
+@using BelbimEnv.Helpers
 
 @{
     ViewData["Title"] = "Kabin Görünümü";
@@ -6,9 +7,11 @@
     var colors = new List<string> { "#0d6efd", "#6f42c1", "#198754", "#dc3545", "#fd7e14", "#20c997", "#6c757d" };
     int colorIndex = 0;
     var highlightedServerId = Context.Request.Query["highlight"];
+
+    bool PortsAreOnFront(Server s) => (s.RearFront ?? "").Trim().ToUpper().StartsWith("F");
+    bool PortsAreOnRear(Server s) => (s.RearFront ?? "").Trim().ToUpper().StartsWith("R");
 }
 
-<!-- LOKASYON SEÇİM MENÜSÜ -->
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h3><i class="fas fa-th me-2"></i>@ViewData["Title"]: <span class="text-primary">@Model.SelectedLocation</span></h3>
     <div class="dropdown">
@@ -24,7 +27,6 @@
     </div>
 </div>
 
-<!-- KABİN GÖRSELLEŞTİRME ALANI -->
 <div class="rack-container">
     @if (!Model.Racks.Any())
     {
@@ -33,64 +35,72 @@
 
     @foreach (var rack in Model.Racks)
     {
-        var processedUnits = new HashSet<int>();
+        var rackSide = rack.Key.Contains("(Ön)") ? "F" : "R";
         <div class="rack-wrapper">
             <div class="rack-header">@rack.Key</div>
             <div class="rack">
-                <div class="rack-side left">@for (int i = 42; i >= 1; i--) {
-                <div class="u-hole">@i</div>
-            }
-</div>
-            <div class="rack-middle">
-                <div class="rack-units">
-                    @foreach (var unit in rack.Value.OrderByDescending(u => u.U_Number))
+                <div class="rack-side left">
+                    @for (int i = 42; i >= 1; i--)
                     {
-                        if (processedUnits.Contains(unit.U_Number)) { continue; }
+                        <div class="u-hole">@i</div>
+                    }
+                </div>
+                <div class="rack-middle">
+                    <div class="rack-units">
+                        @{
+                            var processedUnits = new HashSet<int>();
+                            foreach (var unit in rack.Value.OrderByDescending(u => u.U_Number))
+                            {
+                                if (processedUnits.Contains(unit.U_Number)) { continue; }
 
-                        if (unit.IsOccupied)
-                        {
-                            var serversInThisBlock = unit.OccupyingServers;
-                            var firstServer = serversInThisBlock.First();
-
-                            int uSpan = rack.Value.Count(u => u.IsOccupied && u.OccupyingServers.Contains(firstServer));
-                            int height = (uSpan * 20) - 2;
-
-                            for (int u = unit.U_Number; u > unit.U_Number - uSpan; u--) { processedUnits.Add(u); }
-
-                            <div class="server-block" style="height: @(height)px;">
-                                @foreach (var server in serversInThisBlock)
+                                if (unit.IsOccupied)
                                 {
-                                    if (!colorMap.ContainsKey(server.Model)) { colorMap[server.Model] = colors[colorIndex++ % colors.Count]; }
-                                    string serverColor = colorMap[server.Model];
+                                    var serversInThisBlock = unit.OccupyingServers;
+                                    var firstServer = serversInThisBlock.First();
+                                    int uSpan = rack.Value.Count(u => u.IsOccupied && u.OccupyingServers.Any(s => s.Id == firstServer.Id));
+                                    int height = (uSpan * 20) - 2;
+                                    for (int u = unit.U_Number; u > unit.U_Number - uSpan; u--) { processedUnits.Add(u); }
 
-                                    <div class="server-sub-block @(server.Id.ToString() == highlightedServerId ? "highlight-target" : "")"
-                                         id="server-@server.Id"
-                                         style="background-color: @serverColor;"
-                                         data-bs-toggle="tooltip" data-bs-placement="right" data-bs-html="true"
-                                         title="<strong>@server.HostDns</strong><br>Model: @server.Model<br>U Aralığı: @server.KabinU">
-                                        <a asp-controller="Servers" asp-action="Details" asp-route-id="@server.Id" class="server-link">
-                                            <span class="server-name">@server.HostDns</span>
-                                            <span class="server-u">@server.KabinU</span>
-                                        </a>
+                                    <div class="server-block" style="height: @(height)px;">
+                                        @foreach (var server in serversInThisBlock.OrderBy(s => s.HostDns))
+                                        {
+                                            if (!colorMap.ContainsKey(server.Model ?? "default")) { colorMap[server.Model ?? "default"] = colors[colorIndex++ % colors.Count]; }
+                                            string serverColor = colorMap[server.Model ?? "default"];
+                                            <div class="server-sub-block @(server.Id.ToString() == highlightedServerId ? "highlight-target" : "")"
+                                                 id="server-@server.Id"
+                                                 style="background-color: @serverColor;"
+                                                 data-bs-toggle="tooltip" data-bs-placement="right" data-bs-html="true"
+                                                 title="<strong>@server.HostDns</strong><br>Model: @server.Model<br>U Aralığı: @server.KabinU">
+                                                <a asp-controller="Servers" asp-action="Details" asp-route-id="@server.Id" class="server-link">
+                                                    @if ((rackSide == "F" && PortsAreOnFront(server)) || (rackSide == "R" && PortsAreOnRear(server)))
+                                                    {
+                                                        <span class="port-indicator"><i class="fas fa-plug"></i></span>
+                                                    }
+                                                    <span class="server-name">@server.HostDns</span>
+                                                    <span class="server-u">@server.KabinU</span>
+                                                </a>
+                                            </div>
+                                        }
                                     </div>
                                 }
-                            </div>
+                                else
+                                {
+                                    <div class="empty-unit"></div>
+                                    processedUnits.Add(unit.U_Number);
+                                }
+                            }
                         }
-                        else
-                        {
-                            <div class="empty-unit"></div>
-                            processedUnits.Add(unit.U_Number);
-                        }
+                    </div>
+                </div>
+                <div class="rack-side right">
+                    @for (int i = 42; i >= 1; i--)
+                    {
+                        <div class="u-hole">@i</div>
                     }
                 </div>
             </div>
-            <div class="rack-side right">@for (int i = 42; i >= 1; i--) {
-            <div class="u-hole">@i</div>
-                        }
-</div>
         </div>
-    </div>
-        }
+    }
 </div>
 
 @section Scripts {
@@ -99,8 +109,6 @@
         var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
             return new bootstrap.Tooltip(tooltipTriggerEl)
         });
-
-        // DÜZELTME: Sadece yanıp sönme ve scroll script'i kaldı
         document.addEventListener("DOMContentLoaded", function() {
             const highlightedElement = document.querySelector('.highlight-target');
             if (highlightedElement) {
@@ -220,22 +228,28 @@
                 background-color: rgba(0,0,0,0.2);
             }
 
+        .port-indicator {
+            margin-right: 5px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 11px;
+        }
+
         .server-name {
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            flex-grow: 1;
         }
 
         .server-u {
             background-color: rgba(0,0,0,0.3);
             padding: 0 4px;
             border-radius: 3px;
+            margin-left: 5px;
         }
 
-        /* DÜZELTME: Ok ile ilgili tüm CSS kaldırıldı */
-
         .highlight-target.flash {
-            animation: pulse-glow-red 3s 3; /* 1.5 saniye, 2 tekrar */
+            animation: pulse-glow-red 3s 3;
         }
 
         @@keyframes pulse-glow-red {
@@ -245,8 +259,8 @@
             }
 
             50% {
-                transform: scale(1.15); /* Daha belirgin büyütme */
-                box-shadow: 0 0 25px 15px rgba(220, 53, 69, 0); /* Daha geniş bir parlama */
+                transform: scale(1.15);
+                box-shadow: 0 0 25px 15px rgba(220, 53, 69, 0);
             }
 
             100% {
