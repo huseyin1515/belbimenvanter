@@ -19,7 +19,22 @@ namespace BelbimEnv.Controllers
     public class PortDetaylariController : Controller
     {
         private readonly ApplicationDbContext _context;
+        [HttpGet]
+        public async Task<IActionResult> SearchServers(string term)
+        {
+            if (string.IsNullOrEmpty(term))
+            {
+                return Json(new List<string>());
+            }
 
+            var serverNames = await _context.Servers
+                .Where(s => s.HostDns.Contains(term))
+                .Select(s => s.HostDns)
+                .Take(10) // Çok fazla sonuç dönmemesi için limiti 10 ile sınırla
+                .ToListAsync();
+
+            return Json(serverNames);
+        }
         public PortDetaylariController(ApplicationDbContext context)
         {
             _context = context;
@@ -130,7 +145,7 @@ namespace BelbimEnv.Controllers
             string macAddress = "";
             if (port.PortTipi == PortTipiEnum.Bakir || port.PortTipi == PortTipiEnum.VirtualBakir) macAddress = port.BakirMAC;
             else if (port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC) macAddress = port.FiberMAC;
-            else if (port.PortTipi == PortTipiEnum.SAN) macAddress = port.Wwpn;
+            else if (port.PortTipi == PortTipiEnum.FiberForSAN) macAddress = port.Wwpn;
             string lastFourDigits = "XXXX";
             if (!string.IsNullOrEmpty(macAddress))
             {
@@ -143,12 +158,30 @@ namespace BelbimEnv.Controllers
             else if ((port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC) && port.FcUcPortSayisi.HasValue) { countInfo = port.FcUcPortSayisi.Value.ToString(); }
             return $"{deviceName}_{lastFourDigits}_{typeInitial}_{countInfo}";
         }
+        // GÜNCELLENMİŞ DETAILS METODU
         [Authorize(Roles = "SuperUser,User")]
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
-            var portDetay = await _context.PortDetaylari.Include(p => p.Server).AsNoTracking().FirstOrDefaultAsync(m => m.Id == id);
+
+            var portDetay = await _context.PortDetaylari
+                .Include(p => p.Server) // Kaynak sunucu bilgisini getir
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == id);
+
             if (portDetay == null) return NotFound();
+
+            // Hedef cihazı (switch) bulmak için SwName'i kullanarak Servers tablosunda arama yap
+            if (!string.IsNullOrEmpty(portDetay.SwName))
+            {
+                var targetDevice = await _context.Servers
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(s => s.HostDns == portDetay.SwName);
+
+                // Bulunan hedef cihazı View'a göndermek için ViewData kullan
+                ViewData["TargetDevice"] = targetDevice;
+            }
+
             return View(portDetay);
         }
         [Authorize(Roles = "SuperUser,User")]

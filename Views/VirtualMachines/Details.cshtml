@@ -1,0 +1,54 @@
+﻿@model BelbimEnv.Models.VirtualMachine
+
+@{
+    ViewData["Title"] = "Sanal Makine Detayı";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header bg-light">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0 text-dark"><i class="fas fa-desktop me-2"></i>@Model.VmName - Detayları</h4>
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Listeye Dön</a>
+        </div>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">ID</dt>
+            <dd class="col-sm-9">@Model.Id</dd>
+            <dt class="col-sm-3">VM Adı (Ham)</dt>
+            <dd class="col-sm-9">@Model.VmName</dd>
+            <dt class="col-sm-3">DNS</dt>
+            <dd class="col-sm-9">@Model.Dns</dd>
+            <dt class="col-sm-3">Makine Adı</dt>
+            <dd class="col-sm-9">@Model.MachineName</dd>
+            <dt class="col-sm-3">Makine IP</dt>
+            <dd class="col-sm-9">@Model.MachineIp</dd>
+            <dt class="col-sm-3">VIP IP</dt>
+            <dd class="col-sm-9">@Model.VipIp</dd>
+            <dt class="col-sm-3">Port</dt>
+            <dd class="col-sm-9">@Model.Port</dd>
+            <dt class="col-sm-3">Durumu</dt>
+            <dd class="col-sm-9">@Model.Status</dd>
+            <dt class="col-sm-3">Network</dt>
+            <dd class="col-sm-9">@Model.Network</dd>
+            <dt class="col-sm-3">Cluster</dt>
+            <dd class="col-sm-9">@Model.Cluster</dd>
+            <dt class="col-sm-3">Host</dt>
+            <dd class="col-sm-9">@Model.Host</dd>
+            <dt class="col-sm-3">OS</dt>
+            <dd class="col-sm-9">@Model.OS</dd>
+            <dt class="col-sm-3">Pool</dt>
+            <dd class="col-sm-9">@Model.Pool</dd>
+            <dt class="col-sm-3">Eklenme Tarihi</dt>
+            <dd class="col-sm-9">@Model.DateAdded.ToString("F")</dd>
+            <dt class="col-sm-3">Son Güncelleme</dt>
+            <dd class="col-sm-9">@Model.LastUpdated.ToString("F")</dd>
+        </dl>
+    </div>
+    @if (User.IsInRole("SuperUser"))
+    {
+        <div class="card-footer text-end">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-edit me-1"></i> Düzenle</a>
+        </div>
+    }
+</div>

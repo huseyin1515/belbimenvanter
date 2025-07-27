@@ -8188,23 +8188,23 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\ASUS\\.nuget\\packages\\": {},
+    "C:\\Users\\Ozgur\\.nuget\\packages\\": {},
     "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\ASUS\\source\\repos\\belbimenvanter\\BelbimEnv.csproj",
+      "projectUniqueName": "D:\\belbimEnvYedekler\\yedek24.2259\\belbimenvanter\\BelbimEnv.csproj",
       "projectName": "BelbimEnv",
-      "projectPath": "C:\\Users\\ASUS\\source\\repos\\belbimenvanter\\BelbimEnv.csproj",
-      "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\ASUS\\source\\repos\\belbimenvanter\\obj\\",
+      "projectPath": "D:\\belbimEnvYedekler\\yedek24.2259\\belbimenvanter\\BelbimEnv.csproj",
+      "packagesPath": "C:\\Users\\Ozgur\\.nuget\\packages\\",
+      "outputPath": "D:\\belbimEnvYedekler\\yedek24.2259\\belbimenvanter\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
       ],
       "configFilePaths": [
-        "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Users\\Ozgur\\AppData\\Roaming\\NuGet\\NuGet.Config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
         "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
       ],

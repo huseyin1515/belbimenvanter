@@ -14,6 +14,7 @@ namespace BelbimEnv.Data
         public DbSet<Server> Servers { get; set; }
         public DbSet<PortDetay> PortDetaylari { get; set; }
         public DbSet<User> Users { get; set; } // YENİ EKLENDİ
+        public DbSet<VirtualMachine> VirtualMachines { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

@@ -1,8 +1,10 @@
 ﻿@model BelbimEnv.Models.PortDetay
 @using BelbimEnv.Models
+@using BelbimEnv.Helpers
 
 @{
     ViewData["Title"] = "Port Detayı";
+    var targetDevice = ViewData["TargetDevice"] as Server;
 }
 
 <div class="card shadow-sm">
@@ -14,81 +16,204 @@
     </div>
     <div class="card-body">
 
-        <!-- 1. KATEGORİ: TİPE ÖZEL BİLGİLER -->
-        <h5><i class="fas fa-info-circle text-primary me-2"></i>Tipe Özel Bilgiler</h5>
+        <div class="row">
+            <!-- Sol Taraf: Cihaz ve Port Bilgileri -->
+            <div class="col-md-6">
+                <h5><i class="fas fa-server text-primary me-2"></i>Kaynak Cihaz ve Port</h5>
+                <hr class="mt-1" />
+                <dl class="row">
+                    <dt class="col-sm-4">Ait Olduğu Cihaz</dt>
+                    <dd class="col-sm-8"><a asp-controller="Servers" asp-action="Details" asp-route-id="@Model.ServerId">@Model.Server.HostDns</a></dd>
+                    <dt class="col-sm-4">Port Tipi</dt>
+                    <dd class="col-sm-8"><span class="badge bg-info text-dark fs-6">@Model.PortTipi.GetDisplayName()</span></dd>
+                    @if (Model.PortTipi == PortTipiEnum.FC || Model.PortTipi == PortTipiEnum.VirtualFC)
+                    {
+                        <dt class="col-sm-4">Fiber MAC</dt>
+                        <dd class="col-sm-8">@Model.FiberMAC</dd>
+ }
+                    else if (Model.PortTipi == PortTipiEnum.Bakir || Model.PortTipi == PortTipiEnum.VirtualBakir)
+                    {
+                        <dt class="col-sm-4">Bakır MAC</dt>
+                        <dd class="col-sm-8">@Model.BakirMAC</dd>
+ }
+                    else if (Model.PortTipi == PortTipiEnum.FiberForSAN)
+                    {
+                        <dt class="col-sm-4">WWPN</dt>
+                        <dd class="col-sm-8">@Model.Wwpn</dd>
+ }
+                    <dt class="col-sm-4">NIC ID</dt>
+                    <dd class="col-sm-8">@Model.NicId</dd>
+                    <dt class="col-sm-4">Port ID</dt>
+                    <dd class="col-sm-8">@Model.PortId</dd>
+                </dl>
+            </div>
+
+            <!-- Sağ Taraf: Karşı Uç (Switch) ve Bağlantı Durumu -->
+            <div class="col-md-6">
+                <h5><i class="fas fa-random text-primary me-2"></i>Karşı Uç ve Bağlantı Durumu</h5>
+                <hr class="mt-1" />
+                <dl class="row">
+                    <dt class="col-sm-4">Switch Adı</dt>
+                    <dd class="col-sm-8">@Model.SwName</dd>
+                    <dt class="col-sm-4">Switch Port</dt>
+                    <dd class="col-sm-8">@Model.SwPort</dd>
+                    <dt class="col-sm-4">Uç Port</dt>
+                    <dd class="col-sm-8">@Model.UcPort</dd>
+                    <dt class="col-sm-4">Switch'de Uç mu?</dt>
+                    <dd class="col-sm-8">@Model.SwdeUcMi</dd>
+                    <dt class="col-sm-4">Link Durumu</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.LinkStatus?.ToLower() == "up")
+                        {
+                            <span class="badge bg-success fs-6">Up</span>
+                            ;
+                        }
+                        else if (Model.LinkStatus?.ToLower() == "down")
+                        {
+
+                            <span class="badge bg-danger fs-6">Down</span>
+                            ;
+                        }
+                        else
+                        {
+
+                            <span class="badge bg-secondary fs-6">@Model.LinkStatus</span>
+                            ;
+                        }
+                    </dd>
+                    <dt class="col-sm-4">Link Hızı</dt>
+                    <dd class="col-sm-8">@Model.LinkSpeed Mbps</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- YENİ EKLENEN BAĞLANTI ŞEMASI BÖLÜMÜ -->
+        <h5 class="mt-5"><i class="fas fa-project-diagram text-primary me-2"></i>Bağlantı Şeması</h5>
         <hr class="mt-1" />
-        <dl class="row">
-            <dt class="col-sm-3">Port Tipi</dt>
-            <dd class="col-sm-9"><span class="badge bg-info text-dark fs-6">@Model.PortTipi.GetDisplayName()</span></dd>
+        <div class="connection-schema">
+            <div class="device-box source">
+                <div class="device-header">Kaynak Cihaz</div>
+                <div class="device-body">
+                    <strong><a asp-controller="Servers" asp-action="Details" asp-route-id="@Model.ServerId">@Model.Server.HostDns</a></strong>
+                    <small class="text-muted d-block">@Model.Server.Model</small>
+                    <hr class="my-1"><div class="port-info"><span>Port ID: @Model.PortId</span><span>NIC: @Model.NicId</span></div>
+                </div>
+            </div>
+            <div class="connection-link">
+                <div class="cable-type">@Model.PortTipi.GetDisplayName()</div>
+                <div class="arrow"></div>
+                <div class="speed-info">@Model.LinkSpeed Mbps</div>
+            </div>
+            <div class="device-box target @(targetDevice == null ? "unknown" : "")">
+                <div class="device-header">Hedef Cihaz (Switch)</div>
+                <div class="device-body">
+                    @if (targetDevice != null)
+                    {
+                        <strong><a asp-controller="Servers" asp-action="Details" asp-route-id="@targetDevice.Id">@targetDevice.HostDns</a></strong>
+                        <small class="text-muted d-block">@targetDevice.Model</small>
+                        <hr class="my-1">
 
-            @if (Model.PortTipi == PortTipiEnum.FC || Model.PortTipi == PortTipiEnum.VirtualFC)
-            {
-                <dt class="col-sm-3">Fiber MAC</dt>
-                <dd class="col-sm-9">@Model.FiberMAC</dd>
-                <dt class="col-sm-3">FC Uç Port Sayısı</dt>
-                <dd class="col-sm-9">@Model.FcUcPortSayisi</dd>
-            }
-            else if (Model.PortTipi == PortTipiEnum.Bakir || Model.PortTipi == PortTipiEnum.VirtualBakir)
-            {
-                <dt class="col-sm-3">Bakır MAC</dt>
-                <dd class="col-sm-9">@Model.BakirMAC</dd>
-                <dt class="col-sm-3">Bakır Uplink Port</dt>
-                <dd class="col-sm-9">@Model.BakirUplinkPort</dd>
-            }
-            else if (Model.PortTipi == PortTipiEnum.SAN)
-            {
-                <dt class="col-sm-3">WWPN</dt>
-                <dd class="col-sm-9">@Model.Wwpn</dd>
-            }
-        </dl>
-
-        <!-- 2. KATEGORİ: BAĞLANTI BİLGİLERİ -->
-        <h5 class="mt-4"><i class="fas fa-link text-primary me-2"></i>Bağlantı Bilgileri</h5>
-        <hr class="mt-1" />
-        <dl class="row">
-            <dt class="col-sm-3">Link Durumu</dt>
-            <dd class="col-sm-9">
-                @if (Model.LinkStatus?.ToLower() == "up")
-                {
-                    <span class="badge bg-success fs-6">Up</span>
-                }
-                else if (Model.LinkStatus?.ToLower() == "down")
-                {
-
-                    <span class="badge bg-danger fs-6">Down</span>
-                }
-                else
-                {
-
-                    <span class="badge bg-secondary fs-6">@Model.LinkStatus</span>
-                }
-            </dd>
-            <dt class="col-sm-3">Link Hızı</dt>
-            <dd class="col-sm-9">@Model.LinkSpeed</dd>
-            <dt class="col-sm-3">Port ID</dt>
-            <dd class="col-sm-9">@Model.PortId</dd>
-            <dt class="col-sm-3">NIC ID</dt>
-            <dd class="col-sm-9">@Model.NicId</dd>
-        </dl>
-
-        <!-- 3. KATEGORİ: KARŞI UÇ (SWITCH) BİLGİLERİ -->
-        <h5 class="mt-4"><i class="fas fa-random text-primary me-2"></i>Karşı Uç (Switch) Bilgileri</h5>
-        <hr class="mt-1" />
-        <dl class="row">
-            <dt class="col-sm-3">Ait Olduğu Sunucu</dt>
-            <dd class="col-sm-9"><a asp-controller="Servers" asp-action="Details" asp-route-id="@Model.ServerId">@Model.Server.HostDns</a></dd>
-            <dt class="col-sm-3">Switch Adı</dt>
-            <dd class="col-sm-9">@Model.SwName</dd>
-            <dt class="col-sm-3">Switch Port</dt>
-            <dd class="col-sm-9">@Model.SwPort</dd>
-            <dt class="col-sm-3">Switch'de Uç mu?</dt>
-            <dd class="col-sm-9">@Model.SwdeUcMi</dd>
-            <dt class="col-sm-3">Uç Port</dt>
-            <dd class="col-sm-9">@Model.UcPort</dd>
-        </dl>
+                        <div class="port-info"><span>Port: @Model.SwPort</span></div>
+                    }
+                    else
+                    {
+                        <strong>@Model.SwName</strong>
+                        <small class="text-muted d-block">(Bu cihaz envanterde bulunamadı)</small>
+                    }
+                </div>
+            </div>
+        </div>
 
     </div>
-    <div class="card-footer text-end">
-        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-edit me-1"></i> Bu Portu Düzenle</a>
-    </div>
+    @if (User.IsInRole("SuperUser"))
+    {
+        <div class="card-footer text-end">
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-edit me-1"></i> Bu Portu Düzenle</a>
+        </div>
+    }
 </div>
+
+@section Styles {
+    <style>
+        .connection-schema {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 2rem 1rem;
+            background-color: #f8f9fa;
+            border-radius: .5rem;
+        }
+
+        .device-box {
+            width: 40%;
+            border: 1px solid #dee2e6;
+            border-radius: .5rem;
+            background-color: #fff;
+            box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+        }
+
+        .device-header {
+            padding: .5rem 1rem;
+            background-color: #e9ecef;
+            font-weight: bold;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        .device-box.source .device-header {
+            background-color: #cfe2ff;
+        }
+
+        .device-box.target .device-header {
+            background-color: #d1e7dd;
+        }
+
+        .device-box.target.unknown .device-header {
+            background-color: #fff3cd;
+        }
+
+        .device-body {
+            padding: 1rem;
+        }
+
+        .port-info {
+            font-size: .875em;
+            color: #6c757d;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .connection-link {
+            width: 20%;
+            text-align: center;
+            position: relative;
+        }
+
+        .cable-type {
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: .9em;
+        }
+
+        .arrow {
+            height: 4px;
+            background: linear-gradient(to right, #6c757d, #212529, #6c757d);
+            position: relative;
+        }
+
+            .arrow::after {
+                content: '';
+                position: absolute;
+                right: -1px;
+                top: -6px;
+                border-top: 8px solid transparent;
+                border-bottom: 8px solid transparent;
+                border-left: 12px solid #212529;
+            }
+
+        .speed-info {
+            font-size: .8em;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+}

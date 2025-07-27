@@ -4,6 +4,7 @@ using BelbimEnv.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BelbimEnv.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250724023356_AddRoleToUser")]
+    partial class AddRoleToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -180,64 +183,6 @@ namespace BelbimEnv.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("BelbimEnv.Models.VirtualMachine", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Cluster")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("DateAdded")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Dns")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Host")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("LastUpdated")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("MachineIp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("MachineName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Network")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("OS")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Pool")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Port")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("SN")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("VipIp")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("VmName")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("VirtualMachines");
                 });
 
             modelBuilder.Entity("BelbimEnv.Models.PortDetay", b =>

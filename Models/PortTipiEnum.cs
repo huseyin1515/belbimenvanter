@@ -4,8 +4,8 @@ namespace BelbimEnv.Models
 {
     public enum PortTipiEnum
     {
-        [Display(Name = "SAN")]
-        SAN = 1,
+        [Display(Name = "FiberForSAN")]
+        FiberForSAN = 1,
 
         [Display(Name = "Bakır")]
         Bakir = 2,

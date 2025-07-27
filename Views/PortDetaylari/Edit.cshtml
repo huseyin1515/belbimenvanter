@@ -1,8 +1,22 @@
 ﻿@model BelbimEnv.Models.PortDetay
 @using BelbimEnv.Models
+@using BelbimEnv.Helpers
 
 @{
     ViewData["Title"] = "Port Düzenle";
+    var linkSpeedOptions = new List<SelectListItem>
+    {
+        new SelectListItem("1000", "1000"),
+        new SelectListItem("1500", "1500"),
+        new SelectListItem("2500", "2500"),
+        new SelectListItem("3000", "3000"),
+        new SelectListItem("4000", "4000"),
+        new SelectListItem("5000", "5000"),
+        new SelectListItem("10000", "10000"),
+        new SelectListItem("25000", "25000"),
+        new SelectListItem("40000", "40000"),
+        new SelectListItem("100000", "100000")
+    };
 }
 
 <h4><i class="fas fa-edit text-primary me-2"></i>@ViewData["Title"]</h4>
@@ -28,7 +42,15 @@
             <hr class="mt-1" />
             <div class="row g-3">
                 <div class="col-md-6"><label class="form-label d-block">Link Durumu</label><div class="btn-group link-status-group"><input type="hidden" asp-for="LinkStatus" /><button type="button" class="btn @(Model.LinkStatus == "Up" ? "btn-success active" : "btn-outline-success") btn-sm status-btn" data-status="Up">Up</button><button type="button" class="btn @(Model.LinkStatus == "Down" ? "btn-danger active" : "btn-outline-danger") btn-sm status-btn" data-status="Down">Down</button></div></div>
-                <div class="col-md-6"><label asp-for="LinkSpeed" class="form-label"></label><input asp-for="LinkSpeed" class="form-control" /></div>
+
+                <div class="col-md-6">
+                    <label asp-for="LinkSpeed" class="form-label">Link Hızı (Mbps)</label>
+                    <select asp-for="LinkSpeed" asp-items="linkSpeedOptions" class="form-select">
+                        <option value="">Seçiniz...</option>
+                    </select>
+                    <span asp-validation-for="LinkSpeed" class="text-danger"></span>
+                </div>
+
                 <div class="col-md-6"><label asp-for="PortId" class="form-label"></label><input asp-for="PortId" class="form-control" /></div>
                 <div class="col-md-6"><label asp-for="NicId" class="form-label"></label><input asp-for="NicId" class="form-control" /></div>
                 <div class="col-md-6"><label asp-for="SwName" class="form-label"></label><input asp-for="SwName" class="form-control" /></div>
@@ -57,14 +79,36 @@
                 } else if (secilenTip === '@((int)PortTipiEnum.Bakir)' || secilenTip === '@((int)PortTipiEnum.VirtualBakir)') {
                     document.getElementById('bakirAlani').style.display = 'block';
                     document.getElementById('bakirUplinkAlani').style.display = 'block';
-                } else if (secilenTip === '@((int)PortTipiEnum.SAN)') {
+                } else if (secilenTip === '@((int)PortTipiEnum.FiberForSAN)') {
                     document.getElementById('sanAlani').style.display = 'block';
                 }
             }
             portTipiDropdown.addEventListener('change', updateDynamicFields);
             updateDynamicFields();
 
-            document.querySelector('.link-status-group').addEventListener('click', function(e) { /* ... */ });
+            document.querySelector('.link-status-group').addEventListener('click', function(e) {
+                if (e.target.classList.contains('status-btn')) {
+                    const button = e.target;
+                    const group = button.closest('.link-status-group');
+                    const hiddenInput = group.querySelector('input[type="hidden"]');
+                    const allButtonsInGroup = group.querySelectorAll('.status-btn');
+                    const newStatus = button.dataset.status;
+
+                    if (button.classList.contains('active')) {
+                        button.classList.remove('active', 'btn-success', 'btn-danger');
+                        button.classList.add(newStatus === 'Up' ? 'btn-outline-success' : 'btn-outline-danger');
+                        hiddenInput.value = '';
+                    } else {
+                        allButtonsInGroup.forEach(btn => {
+                            btn.classList.remove('active', 'btn-success', 'btn-danger');
+                            btn.classList.add(btn.dataset.status === 'Up' ? 'btn-outline-success' : 'btn-outline-danger');
+                        });
+                        button.classList.add('active', newStatus === 'Up' ? 'btn-success' : 'btn-danger');
+                        button.classList.remove(newStatus === 'Up' ? 'btn-outline-success' : 'btn-outline-danger');
+                        hiddenInput.value = newStatus;
+                    }
+                }
+            });
         });
     </script>
 }

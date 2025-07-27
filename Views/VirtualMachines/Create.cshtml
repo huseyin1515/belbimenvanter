@@ -1,0 +1,30 @@
+﻿@model BelbimEnv.Models.VirtualMachine
+
+@{
+    ViewData["Title"] = "Yeni Sanal Makine Ekle";
+}
+
+<h4><i class="fas fa-plus-circle text-success me-2"></i>@ViewData["Title"]</h4>
+<hr />
+
+<div class="row">
+    <div class="col-md-8">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <div class="row g-3">
+                <div class="form-group col-md-6"><label asp-for="VmName"></label><input asp-for="VmName" class="form-control" /></div>
+                <div class="form-group col-md-6"><label asp-for="Dns"></label><input asp-for="Dns" class="form-control" /></div>
+                <div class="form-group col-md-6"><label asp-for="MachineName"></label><input asp-for="MachineName" class="form-control" /></div>
+                <div class="form-group col-md-6"><label asp-for="MachineIp"></label><input asp-for="MachineIp" class="form-control" /></div>
+                <div class="form-group col-md-6"><label asp-for="Host"></label><input asp-for="Host" class="form-control" /></div>
+                <div class="form-group col-md-6"><label asp-for="OS"></label><input asp-for="OS" class="form-control" /></div>
+                <div class="form-group col-md-6"><label asp-for="Pool"></label><input asp-for="Pool" class="form-control" /></div>
+                <div class="form-group col-md-6"><label asp-for="Status"></label><input asp-for="Status" class="form-control" placeholder="poweredOn / poweredOff" /></div>
+            </div>
+            <div class="form-group mt-4">
+                <input type="submit" value="Oluştur" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-outline-secondary">Listeye Dön</a>
+            </div>
+        </form>
+    </div>
+</div>

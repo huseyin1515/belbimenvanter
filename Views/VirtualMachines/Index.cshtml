@@ -1,0 +1,252 @@
+﻿@model BelbimEnv.Models.VirtualMachineFilterViewModel
+
+@{
+    ViewData["Title"] = "Sanal Makine Paneli";
+    var serverHostMap = ViewData["ServerHostMap"] as Dictionary<string, int> ?? new Dictionary<string, int>();
+    string previousVipIp = null;
+}
+
+<!-- EXCEL YÜKLEME MODALI -->
+<div class="modal fade" id="excelUploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="ImportExcel" method="post" enctype="multipart/form-data">
+                @Html.AntiForgeryToken()
+                <div class="modal-header"><h5 class="modal-title"><i class="fas fa-file-excel text-success me-2"></i>Sanal Makine Verilerini Yükle</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="mb-3"><label for="file" class="form-label">Excel Dosyası (.xlsx):</label><input type="file" name="file" class="form-control" required accept=".xlsx" /></div>
+                    <div class="mb-3">
+                        <label class="form-label">Yükleme Yöntemi:</label>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="importOption" value="append" checked><label class="form-check-label">Mevcut verilerin üzerine ekle</label></div>
+                        <div class="form-check"><input class="form-check-input" type="radio" name="importOption" value="replace"><label class="form-check-label text-danger">Tüm verileri sil ve bunları ekle (Sıfırla)</label></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" class="btn btn-primary"><i class="fas fa-upload me-1"></i> Yükle</button></div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- FİLTRELEME MODALI -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form asp-action="Index" method="get">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-filter me-2"></i>Gelişmiş Filtre</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-3"><h6>Durum</h6>@foreach(var item in Model.AllStatuses){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedStatuses" value="@item.Value" id="status_@item.Value" @(Model.SelectedStatuses.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="status_@item.Value">@item.Text</label></div>
+                                                }
+</div>
+                        <div class="col-md-3"><h6>Network</h6>@foreach(var item in Model.AllNetworks){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedNetworks" value="@item.Value" id="net_@item.Value" @(Model.SelectedNetworks.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="net_@item.Value">@item.Text</label></div>
+                                                }
+</div>
+                        <div class="col-md-3"><h6>Host</h6>@foreach(var item in Model.AllHosts){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedHosts" value="@item.Value" id="host_@item.Value" @(Model.SelectedHosts.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="host_@item.Value">@item.Text</label></div>
+                                                }
+</div>
+                        <div class="col-md-3"><h6>Cluster</h6>@foreach(var item in Model.AllClusters){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedClusters" value="@item.Value" id="clus_@item.Value" @(Model.SelectedClusters.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="clus_@item.Value">@item.Text</label></div>
+                                                }
+</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a asp-action="Index" class="btn btn-secondary me-auto">Filtreyi Temizle</a>
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button>
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> Filtrele</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<!-- Sayfa Başlığı, Arama ve Butonlar -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="text-primary"><i class="fas fa-desktop me-2"></i>@ViewData["Title"]</h3>
+    <div>
+        <div class="input-group d-inline-flex" style="width: 350px;">
+            <span class="input-group-text"><i class="fas fa-search"></i></span>
+            <input type="text" id="vmSearchInput" class="form-control" placeholder="Mevcut sonuçlarda ara...">
+        </div>
+        <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#filterModal">
+            <i class="fas fa-filter me-1"></i> Filtrele
+        </button>
+        @if (User.IsInRole("SuperUser"))
+        {
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#excelUploadModal"><i class="fas fa-file-excel me-1"></i> Excel ile Yükle</button>
+            <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Yeni VM Ekle</a>
+        }
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-bordered table-sm grouped-table">
+                <thead class="table-dark">
+                    <tr>
+                        <th>DNS</th>
+                        <th>Durumu</th>
+                        <th>VIP IP</th>
+                        <th>Makine IP</th>
+                        <th>Network</th>
+                        <th>Host</th>
+                        <th>Makine Adı</th>
+                        <th>Cluster</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="vmTableBody">
+                    @foreach (var item in Model.VirtualMachines)
+                    {
+                        bool isFirstInGroup = previousVipIp != item.VipIp && !string.IsNullOrEmpty(item.VipIp);
+                        bool isInGroup = !string.IsNullOrEmpty(item.VipIp);
+                        previousVipIp = item.VipIp;
+
+                        <tr class="@(isFirstInGroup ? "group-start" : "")">
+                            <td>
+                                @if (!isFirstInGroup && isInGroup)
+                                {
+                                    <span class="sub-row-indicator"></span>
+                                }
+                                @item.Dns
+                            </td>
+                            <td>
+                                @if (item.Status?.ToLower() == "poweredon")
+                                {
+                                    <span class="badge bg-success">Açık</span>
+                                    ;
+                                }
+                                else if (item.Status?.ToLower() == "poweredoff")
+                                {
+
+                                    <span class="badge bg-danger">Kapalı</span>
+                                    ;
+                                }
+                                else
+                                {
+
+                                    <span class="badge bg-secondary">@item.Status</span>
+                                    ;
+                                }
+                            </td>
+                            <td>
+                                @if (isFirstInGroup)
+                                {
+                                    <strong class="text-primary">@item.VipIp</strong>
+                                    ;
+                                }
+                                else
+                                {
+
+                                    @item.VipIp
+                                    ;
+                                }
+                            </td>
+                            <td>@item.MachineIp</td>
+                            <td>@item.Network</td>
+                            <td>
+                                @if (!string.IsNullOrEmpty(item.Host) && serverHostMap.ContainsKey(item.Host))
+                                {
+                                    <a asp-controller="Servers" asp-action="Details" asp-route-id="@serverHostMap[item.Host]">@item.Host</a>
+                                    ;
+                                }
+                                else
+                                {
+
+                                    @item.Host
+                                    ;
+                                }
+                            </td>
+                            <td>@item.MachineName</td>
+                            <td>@item.Cluster</td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Detaylar"><i class="fas fa-info-circle"></i></a>
+                                @if (User.IsInRole("SuperUser"))
+                                {
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
+                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu kaydı silmek istediğinizden emin misiniz?');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p id="noResultsMessage" class="text-center text-muted" style="display: none;">Arama kriterlerinize uygun sanal makine bulunamadı.</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const searchInput = document.getElementById('vmSearchInput');
+            const tableBody = document.getElementById('vmTableBody');
+            const rows = tableBody.getElementsByTagName('tr');
+            const noResultsMessage = document.getElementById('noResultsMessage');
+            searchInput.addEventListener('keyup', function() {
+                const filterText = searchInput.value.toLowerCase();
+                let visibleRowCount = 0;
+                for (let i = 0; i < rows.length; i++) {
+                    const rowText = rows[i].textContent.toLowerCase();
+                    if (rowText.includes(filterText)) {
+                        rows[i].style.display = "";
+                        visibleRowCount++;
+                    } else {
+                        rows[i].style.display = "none";
+                    }
+                }
+                noResultsMessage.style.display = (visibleRowCount === 0) ? "block" : "none";
+            });
+        });
+    </script>
+}
+
+@section Styles {
+    <style>
+        .grouped-table tbody tr.group-start > td {
+            border-top: 2px solid #adb5bd !important;
+        }
+
+        .grouped-table tbody tr:not(.group-start) > td {
+            border-top: none;
+        }
+
+        .sub-row-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 100%;
+            position: relative;
+            margin-right: 10px;
+            margin-left: 5px;
+        }
+
+            .sub-row-indicator::before {
+                content: '';
+                position: absolute;
+                top: -12px;
+                left: 4px;
+                height: 20px;
+                border-left: 1px solid #ccc;
+            }
+
+            .sub-row-indicator::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 4px;
+                width: 10px;
+                border-top: 1px solid #ccc;
+                transform: translateY(-50%);
+            }
+    </style>
+}
