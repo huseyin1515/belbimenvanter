@@ -1,5 +1,5 @@
 ﻿@model BelbimEnv.Models.RackVisualizationViewModel
-@using BelbimEnv.Helpers
+@using BelbimEnv.Models
 
 @{
     ViewData["Title"] = "Kabin Görünümü";
@@ -10,6 +10,17 @@
 
     bool PortsAreOnFront(Server s) => (s.RearFront ?? "").Trim().ToUpper().StartsWith("F");
     bool PortsAreOnRear(Server s) => (s.RearFront ?? "").Trim().ToUpper().StartsWith("R");
+
+    var groupedRacks = Model.Racks
+        .Select(r => new
+        {
+            Name = r.Key.Replace(" (Ön)", "").Replace(" (Arka)", ""),
+            IsFront = r.Key.Contains("(Ön)"),
+            Data = r.Value
+        })
+        .GroupBy(r => r.Name)
+        .OrderBy(g => g.Key)
+        .ToList();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -27,82 +38,144 @@
     </div>
 </div>
 
-<div class="rack-container">
-    @if (!Model.Racks.Any())
-    {
-        <div class="alert alert-warning">Seçili lokasyonda gösterilecek kabin verisi bulunamadı.</div>
-    }
+@if (!groupedRacks.Any())
+{
+    <div class="alert alert-warning">Seçili lokasyonda gösterilecek kabin verisi bulunamadı.</div>
+}
 
-    @foreach (var rack in Model.Racks)
-    {
-        var rackSide = rack.Key.Contains("(Ön)") ? "F" : "R";
-        <div class="rack-wrapper">
-            <div class="rack-header">@rack.Key</div>
-            <div class="rack">
-                <div class="rack-side left">
-                    @for (int i = 42; i >= 1; i--)
-                    {
-                        <div class="u-hole">@i</div>
+<!-- ===== GÜNCELLENEN BÖLÜM: HER SATIRDA MAKSİMUM 2 KABİN ÇİFTİ ===== -->
+@for (int i = 0; i < groupedRacks.Count; i += 2)
+{
+    var cabinetPair = groupedRacks.Skip(i).Take(2);
+    <div class="rack-container mb-4">
+        @foreach (var cabinetGroup in cabinetPair)
+        {
+            var frontRack = cabinetGroup.FirstOrDefault(r => r.IsFront);
+            var rearRack = cabinetGroup.FirstOrDefault(r => !r.IsFront);
+
+            <!-- ÖN KABİN (varsa çizilir) -->
+            @if (frontRack != null)
+            {
+                <div class="rack-wrapper">
+                    <div class="rack-header">@cabinetGroup.Key (Ön)</div>
+                    <div class="rack">
+                        <div class="rack-side left">@for (int j = 42; j >= 1; j--) {
+                        <div class="u-hole">@j</div>
                     }
-                </div>
-                <div class="rack-middle">
-                    <div class="rack-units">
-                        @{
-                            var processedUnits = new HashSet<int>();
-                            foreach (var unit in rack.Value.OrderByDescending(u => u.U_Number))
-                            {
-                                if (processedUnits.Contains(unit.U_Number)) { continue; }
-
-                                if (unit.IsOccupied)
+        </div>
+                    <div class="rack-middle">
+                        <div class="rack-units">
+                            @{
+                                var processedUnits = new HashSet<int>();
+                                foreach (var unit in frontRack.Data.OrderByDescending(u => u.U_Number))
                                 {
-                                    var serversInThisBlock = unit.OccupyingServers;
-                                    var firstServer = serversInThisBlock.First();
-                                    int uSpan = rack.Value.Count(u => u.IsOccupied && u.OccupyingServers.Any(s => s.Id == firstServer.Id));
-                                    int height = (uSpan * 20) - 2;
-                                    for (int u = unit.U_Number; u > unit.U_Number - uSpan; u--) { processedUnits.Add(u); }
+                                    if (processedUnits.Contains(unit.U_Number)) { continue; }
+                                    if (unit.IsOccupied)
+                                    {
+                                        var serversInThisBlock = unit.OccupyingServers;
+                                        var firstServer = serversInThisBlock.First();
+                                        int uSpan = frontRack.Data.Count(u => u.IsOccupied && u.OccupyingServers.Any(s => s.Id == firstServer.Id));
+                                        int height = (uSpan * 20) - 2;
+                                        for (int u = unit.U_Number; u > unit.U_Number - uSpan; u--) { processedUnits.Add(u); }
 
-                                    <div class="server-block" style="height: @(height)px;">
-                                        @foreach (var server in serversInThisBlock.OrderBy(s => s.HostDns))
-                                        {
-                                            if (!colorMap.ContainsKey(server.Model ?? "default")) { colorMap[server.Model ?? "default"] = colors[colorIndex++ % colors.Count]; }
-                                            string serverColor = colorMap[server.Model ?? "default"];
-                                            <div class="server-sub-block @(server.Id.ToString() == highlightedServerId ? "highlight-target" : "")"
-                                                 id="server-@server.Id"
-                                                 style="background-color: @serverColor;"
-                                                 data-bs-toggle="tooltip" data-bs-placement="right" data-bs-html="true"
-                                                 title="<strong>@server.HostDns</strong><br>Model: @server.Model<br>U Aralığı: @server.KabinU">
-                                                <a asp-controller="Servers" asp-action="Details" asp-route-id="@server.Id" class="server-link">
-                                                    @if ((rackSide == "F" && PortsAreOnFront(server)) || (rackSide == "R" && PortsAreOnRear(server)))
-                                                    {
-                                                        <span class="port-indicator"><i class="fas fa-plug"></i></span>
-                                                    }
-                                                    <span class="server-name">@server.HostDns</span>
-                                                    <span class="server-u">@server.KabinU</span>
-                                                </a>
-                                            </div>
-                                        }
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="empty-unit"></div>
-                                    processedUnits.Add(unit.U_Number);
+                                        <div class="server-block" style="height: @(height)px;">
+                                            @foreach (var server in serversInThisBlock.OrderBy(s => s.HostDns))
+                                            {
+                                                if (!colorMap.ContainsKey(server.Model ?? "default")) { colorMap[server.Model ?? "default"] = colors[colorIndex++ % colors.Count]; }
+                                                string serverColor = colorMap[server.Model ?? "default"];
+                                                <div class="server-sub-block @(server.Id.ToString() == highlightedServerId ? "highlight-target" : "")" style="background-color: @serverColor;" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-html="true" title="<strong>@server.HostDns</strong><br>Model: @server.Model<br>U Aralığı: @server.KabinU">
+                                                    <a asp-controller="Servers" asp-action="Details" asp-route-id="@server.Id" class="server-link">
+                                                        @if (PortsAreOnFront(server))
+                                                        {
+                                                            <span class="port-indicator"><i class="fas fa-plug"></i></span>
+                                                        }
+                                                        <span class="server-name">@server.HostDns</span>
+                                                        <span class="server-u">@server.KabinU</span>
+                                                    </a>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="empty-unit"></div>
+                                        processedUnits.Add(unit.U_Number);
+                                    }
                                 }
                             }
-                        }
+                        </div>
                     </div>
-                </div>
-                <div class="rack-side right">
-                    @for (int i = 42; i >= 1; i--)
-                    {
-                        <div class="u-hole">@i</div>
-                    }
-                </div>
+                    <div class="rack-side right">@for (int j = 42; j >= 1; j--) {
+                    <div class="u-hole">@j</div>
+                }
+    </div>
             </div>
         </div>
     }
-</div>
 
+    <!-- ARKA KABİN (varsa çizilir) -->
+    @if (rearRack != null)
+    {
+        <div class="rack-wrapper">
+            <div class="rack-header">@cabinetGroup.Key (Arka)</div>
+            <div class="rack">
+                <div class="rack-side left">@for (int j = 42; j >= 1; j--) {
+                <div class="u-hole">@j</div>
+            }
+</div>
+            <div class="rack-middle">
+                <div class="rack-units">
+                    @{
+                        var processedUnits = new HashSet<int>();
+                        foreach (var unit in rearRack.Data.OrderByDescending(u => u.U_Number))
+                        {
+                            if (processedUnits.Contains(unit.U_Number)) { continue; }
+                            if (unit.IsOccupied)
+                            {
+                                var serversInThisBlock = unit.OccupyingServers;
+                                var firstServer = serversInThisBlock.First();
+                                int uSpan = rearRack.Data.Count(u => u.IsOccupied && u.OccupyingServers.Any(s => s.Id == firstServer.Id));
+                                int height = (uSpan * 20) - 2;
+                                for (int u = unit.U_Number; u > unit.U_Number - uSpan; u--) { processedUnits.Add(u); }
+
+                                <div class="server-block" style="height: @(height)px;">
+                                    @foreach (var server in serversInThisBlock.OrderBy(s => s.HostDns))
+                                    {
+                                        if (!colorMap.ContainsKey(server.Model ?? "default")) { colorMap[server.Model ?? "default"] = colors[colorIndex++ % colors.Count]; }
+                                        string serverColor = colorMap[server.Model ?? "default"];
+                                        <div class="server-sub-block @(server.Id.ToString() == highlightedServerId ? "highlight-target" : "")" style="background-color: @serverColor;" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-html="true" title="<strong>@server.HostDns</strong><br>Model: @server.Model<br>U Aralığı: @server.KabinU">
+                                            <a asp-controller="Servers" asp-action="Details" asp-route-id="@server.Id" class="server-link">
+                                                @if (PortsAreOnRear(server))
+                                                {
+                                                    <span class="port-indicator"><i class="fas fa-plug"></i></span>
+                                                }
+                                                <span class="server-name">@server.HostDns</span>
+                                                <span class="server-u">@server.KabinU</span>
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="empty-unit"></div>
+                                processedUnits.Add(unit.U_Number);
+                            }
+                        }
+                    }
+                </div>
+            </div>
+            <div class="rack-side right">@for (int j = 42; j >= 1; j--) {
+            <div class="u-hole">@j</div>
+                        }
+</div>
+        </div>
+    </div>
+        }
+        }
+</div>
+}
+<!-- ========================================================= -->
 @section Scripts {
     <script>
         var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
@@ -124,14 +197,14 @@
         .rack-container {
             display: flex;
             flex-wrap: wrap;
-            gap: 40px;
+            gap: 20px;
             justify-content: center;
         }
 
         .rack-wrapper {
             display: flex;
             flex-direction: column;
-            width: 320px;
+            width: 300px;
         }
 
         .rack-header {
