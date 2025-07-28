@@ -12,6 +12,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using ClosedXML.Excel; 
 
 namespace BelbimEnv.Controllers
 {
@@ -25,7 +26,6 @@ namespace BelbimEnv.Controllers
             _context = context;
         }
 
-        // GÜNCELLENMİŞ INDEX METODU
         public async Task<IActionResult> Index(VirtualMachineFilterViewModel filterModel)
         {
             IQueryable<VirtualMachine> vmsQuery = _context.VirtualMachines.AsQueryable();
@@ -40,9 +40,12 @@ namespace BelbimEnv.Controllers
             if (filterModel.SelectedClusters != null && filterModel.SelectedClusters.Any())
                 vmsQuery = vmsQuery.Where(vm => filterModel.SelectedClusters.Contains(vm.Cluster));
 
+            // YENİ POOL FİLTRESİ
+            if (filterModel.SelectedPools != null && filterModel.SelectedPools.Any())
+                vmsQuery = vmsQuery.Where(vm => filterModel.SelectedPools.Contains(vm.Pool));
+
             var filteredVms = await vmsQuery.OrderBy(vm => vm.VipIp).ThenBy(vm => vm.Dns).ToListAsync();
 
-            // ViewModel'ı doldur
             var viewModel = new VirtualMachineFilterViewModel
             {
                 VirtualMachines = filteredVms,
@@ -50,15 +53,18 @@ namespace BelbimEnv.Controllers
                 SelectedNetworks = filterModel.SelectedNetworks,
                 SelectedHosts = filterModel.SelectedHosts,
                 SelectedClusters = filterModel.SelectedClusters,
+                SelectedPools = filterModel.SelectedPools, // YENİ
 
-                // Filtre seçenekleri için tüm benzersiz değerleri al
-                AllStatuses = await _context.VirtualMachines.Where(vm => vm.Status != null).Select(vm => vm.Status).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync(),
-                AllNetworks = await _context.VirtualMachines.Where(vm => vm.Network != null).Select(vm => vm.Network).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync(),
-                AllHosts = await _context.VirtualMachines.Where(vm => vm.Host != null).Select(vm => vm.Host).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync(),
-                AllClusters = await _context.VirtualMachines.Where(vm => vm.Cluster != null).Select(vm => vm.Cluster).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync()
+                AllStatuses = await _context.VirtualMachines.Where(vm => !string.IsNullOrEmpty(vm.Status)).Select(vm => vm.Status).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync(),
+                AllNetworks = await _context.VirtualMachines.Where(vm => !string.IsNullOrEmpty(vm.Network)).Select(vm => vm.Network).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync(),
+                AllHosts = await _context.VirtualMachines.Where(vm => !string.IsNullOrEmpty(vm.Host)).Select(vm => vm.Host).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync(),
+                AllClusters = await _context.VirtualMachines.Where(vm => !string.IsNullOrEmpty(vm.Cluster)).Select(vm => vm.Cluster).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync(),
+                // YENİ POOL LİSTESİ
+                AllPools = await _context.VirtualMachines.Where(vm => !string.IsNullOrEmpty(vm.Pool)).Select(vm => vm.Pool).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync()
             };
 
-            var serverHostMap = await _context.Servers.Where(s => s.HostDns != null).GroupBy(s => s.HostDns).ToDictionaryAsync(g => g.Key, g => g.First().Id);
+            var allServers = await _context.Servers.Where(s => s.HostDns != null).ToListAsync();
+            var serverHostMap = allServers.GroupBy(s => s.HostDns).ToDictionary(g => g.Key, g => g.First().Id);
             ViewData["ServerHostMap"] = serverHostMap;
 
             return View(viewModel);
@@ -138,7 +144,52 @@ namespace BelbimEnv.Controllers
             if (vm == null) return NotFound();
             return View(vm);
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExportToExcel(ExportViewModel model)
+        {
+            var selectedColumns = model.Columns.Where(c => c.IsSelected).Select(c => c.Name).ToList();
+            if (!selectedColumns.Any())
+            {
+                TempData["ErrorMessage"] = "Lütfen dışarı aktarmak için en az bir sütun seçin.";
+                return RedirectToAction(nameof(Index));
+            }
 
+            var virtualMachines = await _context.VirtualMachines.AsNoTracking().ToListAsync();
+
+            using (var workbook = new XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Sanal_Makineler");
+                var currentRow = 1;
+
+                // Başlıkları oluştur
+                for (int i = 0; i < selectedColumns.Count; i++)
+                {
+                    worksheet.Cell(currentRow, i + 1).Value = selectedColumns[i];
+                }
+
+                // Verileri ekle
+                foreach (var vm in virtualMachines)
+                {
+                    currentRow++;
+                    for (int i = 0; i < selectedColumns.Count; i++)
+                    {
+                        var propertyValue = typeof(VirtualMachine).GetProperty(selectedColumns[i])?.GetValue(vm, null);
+                        worksheet.Cell(currentRow, i + 1).Value = propertyValue?.ToString() ?? "";
+                    }
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+                    string excelName = $"Sanal_Makineler_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelName);
+                }
+            }
+        }
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "SuperUser")]

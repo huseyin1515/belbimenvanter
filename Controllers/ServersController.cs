@@ -5,6 +5,7 @@ using ExcelDataReader;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -25,36 +26,59 @@ namespace BelbimEnv.Controllers
             _context = context;
         }
 
-        public async Task<IActionResult> Index(string sortOrder)
+        public async Task<IActionResult> Index(ServerFilterViewModel filterModel, string sortOrder)
         {
             ViewData["CurrentSort"] = sortOrder;
             ViewData["IdSortParm"] = sortOrder == "id" ? "id_desc" : "id";
-            ViewData["HostDnsSortParm"] = String.IsNullOrEmpty(sortOrder) ? "host_desc" : "";
+            ViewData["HostDnsSortParm"] = string.IsNullOrEmpty(sortOrder) ? "host_desc" : "";
             ViewData["IpAdressSortParm"] = sortOrder == "ip" ? "ip_desc" : "ip";
             ViewData["ModelSortParm"] = sortOrder == "model" ? "model_desc" : "model";
             ViewData["ServiceTagSortParm"] = sortOrder == "servicetag" ? "servicetag_desc" : "servicetag";
             ViewData["LocationSortParm"] = sortOrder == "location" ? "location_desc" : "location";
 
-            var servers = from s in _context.Servers
-                          select s;
+            IQueryable<Server> serversQuery = _context.Servers.AsQueryable();
+
+            if (filterModel.SelectedLocations != null && filterModel.SelectedLocations.Any())
+                serversQuery = serversQuery.Where(s => filterModel.SelectedLocations.Contains(s.Location));
+            if (filterModel.SelectedModels != null && filterModel.SelectedModels.Any())
+                serversQuery = serversQuery.Where(s => filterModel.SelectedModels.Contains(s.Model));
+            if (filterModel.SelectedOS != null && filterModel.SelectedOS.Any())
+                serversQuery = serversQuery.Where(s => filterModel.SelectedOS.Contains(s.OS));
+            if (filterModel.SelectedClusters != null && filterModel.SelectedClusters.Any())
+                serversQuery = serversQuery.Where(s => filterModel.SelectedClusters.Contains(s.Cluster));
 
             switch (sortOrder)
             {
-                case "id_desc": servers = servers.OrderByDescending(s => s.Id); break;
-                case "id": servers = servers.OrderBy(s => s.Id); break;
-                case "host_desc": servers = servers.OrderByDescending(s => s.HostDns); break;
-                case "ip": servers = servers.OrderBy(s => s.IpAdress); break;
-                case "ip_desc": servers = servers.OrderByDescending(s => s.IpAdress); break;
-                case "model": servers = servers.OrderBy(s => s.Model); break;
-                case "model_desc": servers = servers.OrderByDescending(s => s.Model); break;
-                case "servicetag": servers = servers.OrderBy(s => s.ServiceTag); break;
-                case "servicetag_desc": servers = servers.OrderByDescending(s => s.ServiceTag); break;
-                case "location": servers = servers.OrderBy(s => s.Location); break;
-                case "location_desc": servers = servers.OrderByDescending(s => s.Location); break;
-                default: servers = servers.OrderBy(s => s.HostDns); break;
+                case "id_desc": serversQuery = serversQuery.OrderByDescending(s => s.Id); break;
+                case "id": serversQuery = serversQuery.OrderBy(s => s.Id); break;
+                case "host_desc": serversQuery = serversQuery.OrderByDescending(s => s.HostDns); break;
+                case "ip": serversQuery = serversQuery.OrderBy(s => s.IpAdress); break;
+                case "ip_desc": serversQuery = serversQuery.OrderByDescending(s => s.IpAdress); break;
+                case "model": serversQuery = serversQuery.OrderBy(s => s.Model); break;
+                case "model_desc": serversQuery = serversQuery.OrderByDescending(s => s.Model); break;
+                case "servicetag": serversQuery = serversQuery.OrderBy(s => s.ServiceTag); break;
+                case "servicetag_desc": serversQuery = serversQuery.OrderByDescending(s => s.ServiceTag); break;
+                case "location": serversQuery = serversQuery.OrderBy(s => s.Location); break;
+                case "location_desc": serversQuery = serversQuery.OrderByDescending(s => s.Location); break;
+                default: serversQuery = serversQuery.OrderBy(s => s.HostDns); break;
             }
 
-            return View(await servers.AsNoTracking().ToListAsync());
+            var filteredServers = await serversQuery.AsNoTracking().ToListAsync();
+
+            var viewModel = new ServerFilterViewModel
+            {
+                Servers = filteredServers,
+                SelectedLocations = filterModel.SelectedLocations,
+                SelectedModels = filterModel.SelectedModels,
+                SelectedOS = filterModel.SelectedOS,
+                SelectedClusters = filterModel.SelectedClusters,
+                AllLocations = await _context.Servers.Where(s => !string.IsNullOrEmpty(s.Location)).Select(s => s.Location).Distinct().Select(l => new SelectListItem(l, l)).ToListAsync(),
+                AllModels = await _context.Servers.Where(s => !string.IsNullOrEmpty(s.Model)).Select(s => s.Model).Distinct().Select(m => new SelectListItem(m, m)).ToListAsync(),
+                AllOS = await _context.Servers.Where(s => !string.IsNullOrEmpty(s.OS)).Select(s => s.OS).Distinct().Select(os => new SelectListItem(os, os)).ToListAsync(),
+                AllClusters = await _context.Servers.Where(s => !string.IsNullOrEmpty(s.Cluster)).Select(s => s.Cluster).Distinct().Select(c => new SelectListItem(c, c)).ToListAsync()
+            };
+
+            return View(viewModel);
         }
 
         public async Task<IActionResult> Details(int? id)

@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ASUS\\source\\repos\\belbimenvanter\\BelbimEnv.csproj": {}
+    "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\BelbimEnv.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ASUS\\source\\repos\\belbimenvanter\\BelbimEnv.csproj": {
+    "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\BelbimEnv.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ASUS\\source\\repos\\belbimenvanter\\BelbimEnv.csproj",
+        "projectUniqueName": "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\BelbimEnv.csproj",
         "projectName": "BelbimEnv",
-        "projectPath": "C:\\Users\\ASUS\\source\\repos\\belbimenvanter\\BelbimEnv.csproj",
-        "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ASUS\\source\\repos\\belbimenvanter\\obj\\",
+        "projectPath": "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\BelbimEnv.csproj",
+        "packagesPath": "C:\\Users\\Ozgur\\.nuget\\packages\\",
+        "outputPath": "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\Ozgur\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],

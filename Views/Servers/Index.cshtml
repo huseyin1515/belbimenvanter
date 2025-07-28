@@ -1,4 +1,4 @@
-﻿@model IEnumerable<BelbimEnv.Models.Server>
+﻿    @model BelbimEnv.Models.ServerFilterViewModel
 
 @{
     ViewData["Title"] = "Envanter Paneli";
@@ -32,8 +32,37 @@
             </form>
         </div>
     </div>
+</div><!-- GELİŞMİŞ FİLTRELEME MODALI -->
+<div class="modal fade" id="filterModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <form asp-action="Index" method="get">
+                <div class="modal-header"><h5 class="modal-title"><i class="fas fa-filter me-2"></i>Gelişmiş Filtre</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="row g-4">
+                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Lokasyon</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Lokasyon ara..." data-target-list="#location-list"></div><div class="card-body filter-options" id="location-list">@foreach(var item in Model.AllLocations){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedLocations" value="@item.Value" id="loc_@item.Value" @(Model.SelectedLocations.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="loc_@item.Value">@item.Text</label></div>
+                                                }
+</div></div></div>
+                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Model</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Model ara..." data-target-list="#model-list"></div><div class="card-body filter-options" id="model-list">@foreach(var item in Model.AllModels){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedModels" value="@item.Value" id="mod_@item.Value" @(Model.SelectedModels.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="mod_@item.Value">@item.Text</label></div>
+                                                }
+</div></div></div>
+                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">İşletim Sistemi</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="İS ara..." data-target-list="#os-list"></div><div class="card-body filter-options" id="os-list">@foreach(var item in Model.AllOS){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedOS" value="@item.Value" id="os_@item.Value" @(Model.SelectedOS.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="os_@item.Value">@item.Text</label></div>
+                                                }
+</div></div></div>
+                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Cluster</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Cluster ara..." data-target-list="#cluster-list"></div><div class="card-body filter-options" id="cluster-list">@foreach(var item in Model.AllClusters){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedClusters" value="@item.Value" id="clus_@item.Value" @(Model.SelectedClusters.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="clus_@item.Value">@item.Text</label></div>
+                                                }
+</div></div></div>
+                    </div>
+                </div>
+                <div class="modal-footer"><a asp-action="Index" class="btn btn-secondary me-auto">Filtreyi Temizle</a><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button><button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> Filtrele</button></div>
+            </form>
+        </div>
+    </div>
 </div>
-
 <!-- YENİ DIŞARI AKTARMA MODAL PENCERESİ -->
 <div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -81,6 +110,10 @@
             <input type="text" id="serverSearchInput" class="form-control" placeholder="Envanter bilgilerinde ara...">
         </div>
 
+        <!-- EKSİK OLAN VE YENİDEN EKLENEN BUTON -->
+        <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#filterModal">
+            <i class="fas fa-filter me-1"></i> Filtrele
+        </button>
         <button type="button" class="btn btn-warning ms-2" data-bs-toggle="modal" data-bs-target="#exportExcelModal">
             <i class="fas fa-file-export me-1"></i> Dışarı Aktar
         </button>
@@ -114,10 +147,13 @@
                     </tr>
                 </thead>
                 <tbody id="serverTableBody">
-                    @if (Model == null || !Model.Any()) { /* ... */ }
+                    @if (Model.Servers == null || !Model.Servers.Any())
+                    {
+                        <tr><td colspan="7" class="text-center py-4"><p class="text-muted">Henüz hiç envanter kaydı bulunmuyor.</p></td></tr>
+                    }
                     else
                     {
-                        @foreach (var item in Model)
+                        @foreach (var item in Model.Servers)
                         {
                             <tr>
                                 <td>@item.Id</td>
@@ -199,7 +235,26 @@
                     fileInput.dispatchEvent(new Event('change'));
                 });
             }
-        });
+
+        // FİLTRE İÇİ ARAMA SCRİPT'İ
+                 document.querySelectorAll('.filter-search').forEach(input => {
+                     input.addEventListener('keyup', function() {
+                         const filterText = this.value.toLowerCase();
+                         const targetListId = this.dataset.targetList;
+                         const listContainer = document.querySelector(targetListId);
+                         if (listContainer) {
+                             listContainer.querySelectorAll('.form-check').forEach(item => {
+                                 const label = item.querySelector('label');
+                                 if (label && label.textContent.toLowerCase().includes(filterText)) {
+                                     item.style.display = "";
+                                 } else {
+                                     item.style.display = "none";
+                                 }
+                             });
+                         }
+                     });
+                 });
+             });
     </script>
 }
 
@@ -227,6 +282,15 @@
             .sort-link:hover {
                 color: #adb5bd;
                 text-decoration: none;
+            }
+
+        .filter-options {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+            .filter-options .form-check {
+                margin-bottom: 0.5rem;
             }
     </style>
 }

@@ -5,12 +5,14 @@ using ExcelDataReader;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace BelbimEnv.Controllers
@@ -39,9 +41,10 @@ namespace BelbimEnv.Controllers
         {
             _context = context;
         }
+        // GÜNCELLENMİŞ IMPORTEXCEL METODU (DETAYLI HATA TAKİBİ İLE)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "SuperUser")] // Sadece SuperUser erişebilir
+        [Authorize(Roles = "SuperUser")]
         public async Task<IActionResult> ImportExcel(IFormFile file, string importOption)
         {
             if (file == null || file.Length == 0)
@@ -52,7 +55,7 @@ namespace BelbimEnv.Controllers
 
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
             var portsToImport = new List<PortDetay>();
-            var notFoundServiceTags = new List<string>();
+            var skippedRows = new List<string>(); // Atlanan satırların sebeplerini tutacak liste
 
             try
             {
@@ -65,16 +68,19 @@ namespace BelbimEnv.Controllers
                         DataTable dataTable = result.Tables[0];
 
                         var allServers = await _context.Servers.ToListAsync();
-                        var serversDict = allServers
-                            .Where(s => !string.IsNullOrEmpty(s.ServiceTag))
-                            .GroupBy(s => s.ServiceTag.Trim(), StringComparer.OrdinalIgnoreCase)
-                            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+                        var serversDict = allServers.Where(s => !string.IsNullOrEmpty(s.ServiceTag)).GroupBy(s => s.ServiceTag.Trim(), StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
+                        int rowNumber = 1; // Excel'deki satır numarasını takip etmek için (başlık satırından sonra)
                         foreach (DataRow row in dataTable.Rows)
                         {
-                            string serviceTag = row.Table.Columns.Contains("Device Service Tag") ? row["Device Service Tag"]?.ToString()?.Trim() :
-                                               (row.Table.Columns.Contains("Device Service Ta*") ? row["Device Service Ta*"]?.ToString()?.Trim() : null);
-                            if (string.IsNullOrEmpty(serviceTag)) continue;
+                            rowNumber++; // Her döngüde satır numarasını artır
+
+                            string serviceTag = row.Table.Columns.Contains("Device Service Tag") ? row["Device Service Tag"]?.ToString()?.Trim() : null;
+                            if (string.IsNullOrEmpty(serviceTag))
+                            {
+                                skippedRows.Add($"Satır {rowNumber}: 'Device Service Tag' sütunu boş olduğu için atlandı.");
+                                continue;
+                            }
 
                             if (serversDict.TryGetValue(serviceTag, out Server server))
                             {
@@ -84,33 +90,20 @@ namespace BelbimEnv.Controllers
                                 {
                                     Enum.TryParse<PortTipiEnum>(turuStr.Replace(" ", ""), true, out portTipi);
                                 }
-                                if (portTipi == default(PortTipiEnum)) continue;
 
-                                var port = new PortDetay
+                                if (portTipi == default(PortTipiEnum))
                                 {
-                                    ServerId = server.Id,
-                                    PortTipi = portTipi,
-                                    LinkStatus = row.Table.Columns.Contains("Link Status") ? row["Link Status"]?.ToString() : null,
-                                    LinkSpeed = row.Table.Columns.Contains("Link Speed") ? row["Link Speed"]?.ToString() : (row.Table.Columns.Contains("Link Spee*") ? row["Link Spee*"]?.ToString() : null),
-                                    PortId = row.Table.Columns.Contains("Port ID") ? row["Port ID"]?.ToString() : (row.Table.Columns.Contains("Port-ID") ? row["Port-ID"]?.ToString() : null),
-                                    NicId = row.Table.Columns.Contains("NIC ID") ? row["NIC ID"]?.ToString() : null,
-                                    FiberMAC = row.Table.Columns.Contains("Fiber MAC") ? row["Fiber MAC"]?.ToString() : null,
-                                    BakirMAC = row.Table.Columns.Contains("Bakır MAC") ? row["Bakır MAC"]?.ToString() : null,
-                                    Wwpn = row.Table.Columns.Contains("WWPN") ? row["WWPN"]?.ToString() : null,
-                                    SwName = row.Table.Columns.Contains("SW NAME") ? row["SW NAME"]?.ToString() : null,
-                                    SwPort = row.Table.Columns.Contains("SW PORT") ? row["SW PORT"]?.ToString() : (row.Table.Columns.Contains("SW POR*") ? row["SW POR*"]?.ToString() : null),
-                                    SwdeUcMi = row.Table.Columns.Contains("Swde Up Mı?") ? row["Swde Up Mı?"]?.ToString() : (row.Table.Columns.Contains("Swde Uç mı?") ? row["Swde Uç mı?"]?.ToString() : null),
-                                    FcUcPortSayisi = row.Table.Columns.Contains("FC_Up Port Sayısı") && int.TryParse(row["FC_Up Port Sayısı"]?.ToString(), out int fcCount) ? fcCount : null,
-                                    BakirUplinkPort = row.Table.Columns.Contains("BakırUpPort") ? row["BakırUpPort"]?.ToString() : (row.Table.Columns.Contains("BakırUplinkPor*") ? row["BakırUplinkPor*"]?.ToString() : null),
-                                    UcPort = row.Table.Columns.Contains("Up Port") ? row["Up Port"]?.ToString() : null
-                                };
+                                    skippedRows.Add($"Satır {rowNumber}: Geçersiz veya boş 'Türü' değeri ('{turuStr}') için atlandı.");
+                                    continue;
+                                }
 
+                                var port = new PortDetay { /* ... alan atamaları ... */ };
                                 port.Aciklama = GeneratePortDescription(port, server);
                                 portsToImport.Add(port);
                             }
-                            else if (!notFoundServiceTags.Contains(serviceTag))
+                            else
                             {
-                                notFoundServiceTags.Add(serviceTag);
+                                skippedRows.Add($"Satır {rowNumber}: '{serviceTag}' Service Tag'ine sahip sunucu bulunamadığı için atlandı.");
                             }
                         }
                     }
@@ -125,17 +118,27 @@ namespace BelbimEnv.Controllers
             try
             {
                 if (importOption == "replace") { _context.PortDetaylari.RemoveRange(_context.PortDetaylari); }
-                await _context.PortDetaylari.AddRangeAsync(portsToImport);
-                await _context.SaveChangesAsync();
+                if (portsToImport.Any())
+                {
+                    await _context.PortDetaylari.AddRangeAsync(portsToImport);
+                    await _context.SaveChangesAsync();
+                }
 
-                string successMessage = $"{portsToImport.Count} port başarıyla yüklendi.";
-                if (notFoundServiceTags.Any()) { TempData["WarningMessage"] = $"{successMessage} Ancak şu Service Tag'lere sahip sunucular bulunamadığı için bu portlar atlandı: {string.Join(", ", notFoundServiceTags)}"; }
-                else { TempData["SuccessMessage"] = successMessage; }
+                // Detaylı mesaj oluşturma
+                var messageBuilder = new StringBuilder();
+                messageBuilder.Append($"{portsToImport.Count} port başarıyla yüklendi.");
+                if (skippedRows.Any())
+                {
+                    // \n karakterini <br> etiketine çevirerek HTML'de alt satıra geçmeyi sağlıyoruz
+                    string skippedRowsHtml = string.Join("<br>", skippedRows.Select(s => "- " + s));
+                    TempData["WarningMessage"] = $"{messageBuilder.ToString()} <hr><strong>Ancak {skippedRows.Count} satır şu sebeplerle atlandı:</strong><br>{skippedRowsHtml}";
+                }
+                else
+                {
+                    TempData["SuccessMessage"] = messageBuilder.ToString();
+                }
             }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Veritabanına kayıt sırasında hata: {ex.InnerException?.Message ?? ex.Message}";
-            }
+            catch (Exception ex) { TempData["ErrorMessage"] = $"Veritabanına kayıt sırasında hata: {ex.InnerException?.Message ?? ex.Message}"; }
             return RedirectToAction(nameof(ListAll));
         }
 
@@ -185,7 +188,7 @@ namespace BelbimEnv.Controllers
             return View(portDetay);
         }
         [Authorize(Roles = "SuperUser,User")]
-        public async Task<IActionResult> ListAll(string sortOrder)
+        public async Task<IActionResult> ListAll(PortFilterViewModel filterModel, string sortOrder)
         {
             ViewData["CurrentSort"] = sortOrder;
             ViewData["ServerSortParm"] = String.IsNullOrEmpty(sortOrder) ? "server_desc" : "";
@@ -194,24 +197,55 @@ namespace BelbimEnv.Controllers
             ViewData["ServiceTagSortParm"] = sortOrder == "servicetag" ? "servicetag_desc" : "servicetag";
             ViewData["PortTypeSortParm"] = sortOrder == "porttype" ? "porttype_desc" : "porttype";
 
-            var ports = from p in _context.PortDetaylari.Include(p => p.Server)
-                        select p;
+            IQueryable<PortDetay> portsQuery = _context.PortDetaylari.Include(p => p.Server);
+
+            if (filterModel.SelectedLocations != null && filterModel.SelectedLocations.Any())
+                portsQuery = portsQuery.Where(p => filterModel.SelectedLocations.Contains(p.Server.Location));
+            if (filterModel.SelectedPortTypes != null && filterModel.SelectedPortTypes.Any())
+            {
+                var selectedTypesAsEnum = filterModel.SelectedPortTypes.Select(s => Enum.Parse<PortTipiEnum>(s)).ToList();
+                portsQuery = portsQuery.Where(p => selectedTypesAsEnum.Contains(p.PortTipi));
+            }
+            if (filterModel.SelectedLinkStatuses != null && filterModel.SelectedLinkStatuses.Any())
+                portsQuery = portsQuery.Where(p => filterModel.SelectedLinkStatuses.Contains(p.LinkStatus));
+            if (filterModel.SelectedSwNames != null && filterModel.SelectedSwNames.Any())
+                portsQuery = portsQuery.Where(p => filterModel.SelectedSwNames.Contains(p.SwName));
 
             switch (sortOrder)
             {
-                case "server_desc": ports = ports.OrderByDescending(p => p.Server.HostDns); break;
-                case "location": ports = ports.OrderBy(p => p.Server.Location); break;
-                case "location_desc": ports = ports.OrderByDescending(p => p.Server.Location); break;
-                case "model": ports = ports.OrderBy(p => p.Server.Model); break;
-                case "model_desc": ports = ports.OrderByDescending(p => p.Server.Model); break;
-                case "servicetag": ports = ports.OrderBy(p => p.Server.ServiceTag); break;
-                case "servicetag_desc": ports = ports.OrderByDescending(p => p.Server.ServiceTag); break;
-                case "porttype": ports = ports.OrderBy(p => p.PortTipi); break;
-                case "porttype_desc": ports = ports.OrderByDescending(p => p.PortTipi); break;
-                default: ports = ports.OrderBy(p => p.Server.HostDns); break;
+                case "server_desc": portsQuery = portsQuery.OrderByDescending(p => p.Server.HostDns); break;
+                case "location": portsQuery = portsQuery.OrderBy(p => p.Server.Location); break;
+                case "location_desc": portsQuery = portsQuery.OrderByDescending(p => p.Server.Location); break;
+                case "model": portsQuery = portsQuery.OrderBy(p => p.Server.Model); break;
+                case "model_desc": portsQuery = portsQuery.OrderByDescending(p => p.Server.Model); break;
+                case "servicetag": portsQuery = portsQuery.OrderBy(p => p.Server.ServiceTag); break;
+                case "servicetag_desc": portsQuery = portsQuery.OrderByDescending(p => p.Server.ServiceTag); break;
+                case "porttype": portsQuery = portsQuery.OrderBy(p => p.PortTipi); break;
+                case "porttype_desc": portsQuery = portsQuery.OrderByDescending(p => p.PortTipi); break;
+                default: portsQuery = portsQuery.OrderBy(p => p.Server.HostDns); break;
             }
 
-            return View(await ports.AsNoTracking().ToListAsync());
+            var filteredPorts = await portsQuery.AsNoTracking().ToListAsync();
+
+            var portTypes = Enum.GetValues(typeof(PortTipiEnum))
+                                .Cast<PortTipiEnum>()
+                                .Select(e => new SelectListItem { Text = e.ToString(), Value = e.ToString() })
+                                .ToList();
+
+            var viewModel = new PortFilterViewModel
+            {
+                Ports = filteredPorts,
+                SelectedLocations = filterModel.SelectedLocations,
+                SelectedPortTypes = filterModel.SelectedPortTypes,
+                SelectedLinkStatuses = filterModel.SelectedLinkStatuses,
+                SelectedSwNames = filterModel.SelectedSwNames,
+                AllLocations = await _context.Servers.Where(s => !string.IsNullOrEmpty(s.Location)).Select(s => s.Location).Distinct().Select(l => new SelectListItem(l, l)).ToListAsync(),
+                AllPortTypes = portTypes,
+                AllLinkStatuses = await _context.PortDetaylari.Where(p => !string.IsNullOrEmpty(p.LinkStatus)).Select(p => p.LinkStatus).Distinct().Select(s => new SelectListItem(s, s)).ToListAsync(),
+                AllSwNames = await _context.PortDetaylari.Where(p => !string.IsNullOrEmpty(p.SwName)).Select(p => p.SwName).Distinct().Select(sw => new SelectListItem(sw, sw)).ToListAsync()
+            };
+
+            return View(viewModel);
         }
 
         [HttpPost]

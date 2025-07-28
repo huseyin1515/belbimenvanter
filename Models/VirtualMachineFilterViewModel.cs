@@ -12,7 +12,7 @@ namespace BelbimEnv.Models
 
     public class VirtualMachineFilterViewModel
     {
-        // Filtrelenen VM listesi
+
         public IEnumerable<VirtualMachine> VirtualMachines { get; set; }
 
         // Filtreleme seçenekleri
@@ -20,11 +20,13 @@ namespace BelbimEnv.Models
         public List<string> SelectedNetworks { get; set; } = new List<string>();
         public List<string> SelectedHosts { get; set; } = new List<string>();
         public List<string> SelectedClusters { get; set; } = new List<string>();
+        public List<string> SelectedPools { get; set; } = new List<string>(); // YENİ EKLENDİ
 
         // Checkbox listeleri için
         public List<SelectListItem> AllStatuses { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> AllNetworks { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> AllHosts { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> AllClusters { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> AllPools { get; set; } = new List<SelectListItem>(); // YENİ EKLENDİ
     }
 }
