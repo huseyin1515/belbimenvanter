@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("BelbimEnv")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+61548f30005594e450643d39708e07f1b646e2e3")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+da8a040ebb2c52f0b3292e506ba45100b497b0fd")]
 [assembly: System.Reflection.AssemblyProductAttribute("BelbimEnv")]
 [assembly: System.Reflection.AssemblyTitleAttribute("BelbimEnv")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

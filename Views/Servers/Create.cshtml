@@ -91,7 +91,10 @@
                                 <option value="" selected disabled>Seçiniz...</option>
                                 <option value="F">Ön (Front)</option>
                                 <option value="R">Arka (Rear)</option>
-                                <option value="F-R">Ön ve Arka</option>
+                                <!-- ===== GÜNCELLENEN BÖLÜM ===== -->
+                                <option value="F-R">Ön-Arka (Portlar Önde)</option>
+                                <option value="R-F">Arka-Ön (Portlar Arkada)</option>
+                                <!-- =============================== -->
                             </select>
                         </div>
                         <div class="col-md-2">
@@ -298,122 +301,21 @@
 
 @section Styles {
     <style>
-        .rack-container {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 40px;
-            justify-content: center;
-        }
-
-        .rack-wrapper {
-            display: flex;
-            flex-direction: column;
-            width: 320px;
-        }
-
-        .rack-header {
-            background-color: #343a40;
-            color: white;
-            padding: 8px 10px;
-            font-weight: bold;
-            text-align: center;
-            border-top-left-radius: 5px;
-            border-top-right-radius: 5px;
-        }
-
-        .rack {
-            display: flex;
-            flex-grow: 1;
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-top: none;
-            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
-        }
-
-        .rack-side {
-            background-color: #495057;
-            padding: 5px 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .u-hole {
-            width: 25px;
-            height: 18px;
-            margin-bottom: 2px;
-            color: #adb5bd;
-            font-size: 10px;
-            text-align: center;
-            border-top: 1px solid #6c757d;
-            border-bottom: 1px solid #6c757d;
-        }
-
-        .rack-middle {
-            flex-grow: 1;
-        }
-
-        .rack-units {
-            padding: 5px;
-            display: flex;
-            flex-direction: column-reverse;
-        }
-
-        .empty-unit, .server-block, .occupied-server-block {
-            margin-bottom: 2px;
-            box-sizing: border-box;
-        }
-
-        .empty-unit {
-            height: 18px;
-            background-image: linear-gradient(45deg, #e9ecef 25%, #dee2e6 25%, #dee2e6 50%, #e9ecef 50%, #e9ecef 75%, #dee2e6 75%, #dee2e6 100%);
-            background-size: 10px 10px;
-        }
-
-        .server-block, .occupied-server-block {
-            display: flex;
-            flex-direction: column;
-            justify-content: stretch;
-            border: 1px solid rgba(0,0,0,0.2);
-            border-radius: 3px;
-            overflow: hidden;
-        }
-
-        .server-sub-block, .occupied-server-sub-block {
-            flex: 1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 8px;
-            color: white;
-            text-decoration: none;
-            font-size: 11px;
-            font-weight: bold;
-        }
-
-        .server-name {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .server-u {
-            background-color: rgba(0,0,0,0.3);
-            padding: 0 4px;
-            border-radius: 3px;
-        }
-
-        .rack-container.selectable .empty-unit:hover {
-            background-color: #a7d7f9;
-            cursor: pointer;
-        }
-
-        .rack-container.selectable .empty-unit.selected-u {
-            background-color: #0d6efd;
-            border: 1px solid #0a58ca;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8l2 2 4-4'/%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: center;
-        }
+        .rack-container { display: flex; flex-wrap: wrap; gap: 40px; justify-content: center; }
+        .rack-wrapper { display: flex; flex-direction: column; width: 320px; }
+        .rack-header { background-color: #343a40; color: white; padding: 8px 10px; font-weight: bold; text-align: center; border-top-left-radius: 5px; border-top-right-radius: 5px; }
+        .rack { display: flex; flex-grow: 1; background-color: #f8f9fa; border: 1px solid #dee2e6; border-top: none; box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important; }
+        .rack-side { background-color: #495057; padding: 5px 0; display: flex; flex-direction: column; align-items: center; }
+        .u-hole { width: 25px; height: 18px; margin-bottom: 2px; color: #adb5bd; font-size: 10px; text-align: center; border-top: 1px solid #6c757d; border-bottom: 1px solid #6c757d; }
+        .rack-middle { flex-grow: 1; }
+        .rack-units { padding: 5px; display: flex; flex-direction: column-reverse; }
+        .empty-unit, .server-block, .occupied-server-block { margin-bottom: 2px; box-sizing: border-box; }
+        .empty-unit { height: 18px; background-image: linear-gradient(45deg, #e9ecef 25%, #dee2e6 25%, #dee2e6 50%, #e9ecef 50%, #e9ecef 75%, #dee2e6 75%, #dee2e6 100%); background-size: 10px 10px; }
+        .server-block, .occupied-server-block { display: flex; flex-direction: column; justify-content: stretch; border: 1px solid rgba(0,0,0,0.2); border-radius: 3px; overflow: hidden; }
+        .server-sub-block, .occupied-server-sub-block { flex: 1; display: flex; justify-content: space-between; align-items: center; padding: 0 8px; color: white; text-decoration: none; font-size: 11px; font-weight: bold; }
+        .server-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .server-u { background-color: rgba(0,0,0,0.3); padding: 0 4px; border-radius: 3px; }
+        .rack-container.selectable .empty-unit:hover { background-color: #a7d7f9; cursor: pointer; }
+        .rack-container.selectable .empty-unit.selected-u { background-color: #0d6efd; border: 1px solid #0a58ca; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23fff' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M4 8l2 2 4-4'/%3e%3c/svg%3e"); background-repeat: no-repeat; background-position: center; }
     </style>
 }
