@@ -46,6 +46,11 @@ namespace BelbimEnv.Models
         [Display(Name = "İsttelkom Etiket ID")]
         public string? IsttelkomEtiketId { get; set; }
 
+        // === EKLENMESİ GEREKEN ALAN BURASI ===
+        [Display(Name = "Port Adedi")]
+        public int? PortAdedi { get; set; }
+        // ===================================
+
         public DateTime DateAdded { get; set; }
 
         public DateTime LastUpdated { get; set; }

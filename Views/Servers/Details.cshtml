@@ -27,7 +27,7 @@
             <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">Kimlik ve Model Bilgileri</h6></div>
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">ID</dt>
+                    <dt class="col-sm-4">Sunucu ID</dt>
                     <dd class="col-sm-8">@Model.Server.Id</dd>
                     <dt class="col-sm-4">Host DNS</dt>
                     <dd class="col-sm-8">@Model.Server.HostDns</dd>
@@ -37,11 +37,12 @@
                     <dd class="col-sm-8">@Model.Server.Model</dd>
                     <dt class="col-sm-4">Service Tag</dt>
                     <dd class="col-sm-8">@Model.Server.ServiceTag</dd>
+                    <dt class="col-sm-4">Port Adedi</dt>
+                    <dd class="col-sm-8">@Model.Server.PortAdedi</dd>
                 </dl>
             </div>
         </div>
     </div>
-   #burada
     <div class="col-lg-6">
         <div class="card shadow mb-4">
             <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">Fiziksel Konum ve Yönetim</h6></div>
@@ -121,7 +122,7 @@
 
         <hr class="my-4">
 
-        <!-- 2. GELEN BAĞLANTILAR (YENİ EKLENEN BÖLÜM) -->
+        <!-- 2. GELEN BAĞLANTILAR -->
         <h5 class="mb-3">Bu Cihaza Gelen Bağlantılar (@Model.InboundConnections.Count)</h5>
         @if (Model.InboundConnections.Any())
         {
@@ -168,8 +169,16 @@
 
 @section Styles {
     <style>
-        body { background-color: #f8f9fc; }
-        .card { border: none; }
-        .text-gray-800 { color: #5a5c69 !important; }
+        body {
+            background-color: #f8f9fc;
+        }
+
+        .card {
+            border: none;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
     </style>
 }

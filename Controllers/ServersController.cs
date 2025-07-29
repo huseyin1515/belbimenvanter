@@ -125,7 +125,6 @@ namespace BelbimEnv.Controllers
 
             return View(viewModel);
         }
-
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
@@ -138,12 +137,11 @@ namespace BelbimEnv.Controllers
 
             if (server == null) return NotFound();
 
-            // 2. YENİ: Bu sunucuya GELEN bağlantıları bul.
+            // 2. Bu sunucuya GELEN bağlantıları bul.
             // PortDetaylari tablosunda, SwName'i bu sunucunun HostDns'i olan tüm portları bul.
-            // Kaynak sunucu bilgisini de almak için Include(p => p.Server) ekliyoruz.
             var inboundConnections = await _context.PortDetaylari
                 .Where(p => p.SwName == server.HostDns)
-                .Include(p => p.Server) // Kaynak sunucunun (bağlantının geldiği cihazın) bilgilerini de al
+                .Include(p => p.Server) // Kaynak sunucunun bilgilerini de al
                 .AsNoTracking()
                 .ToListAsync();
 
@@ -307,7 +305,6 @@ namespace BelbimEnv.Controllers
             }
             return RedirectToAction(nameof(Index));
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ImportExcel(IFormFile file, string importOption)
@@ -343,29 +340,37 @@ namespace BelbimEnv.Controllers
 
                         foreach (DataRow row in dataTable.Rows)
                         {
-                            if (!row.Table.Columns.Contains("Host DNS") || row["Host DNS"] == null || string.IsNullOrEmpty(row["Host DNS"].ToString()))
+                            if (!row.Table.Columns.Contains("Host DNS") || row["Host DNS"] == null || string.IsNullOrWhiteSpace(row["Host DNS"].ToString()))
                             {
                                 continue;
                             }
 
                             var server = new Server
                             {
-                                HostDns = row["Host DNS"]?.ToString(),
-                                IpAdress = row.Table.Columns.Contains("IP Adress") ? row["IP Adress"]?.ToString() : null,
-                                Model = row.Table.Columns.Contains("Model") ? row["Model"]?.ToString() : null,
-                                ServiceTag = row.Table.Columns.Contains("Service Tag / Serial Number") ? row["Service Tag / Serial Number"]?.ToString() : null,
-                                VcenterAdress = row.Table.Columns.Contains("Vcenter Adress") ? row["Vcenter Adress"]?.ToString() : null,
-                                Cluster = row.Table.Columns.Contains("Cluster") ? row["Cluster"]?.ToString() : null,
-                                Location = row.Table.Columns.Contains("Location") ? row["Location"]?.ToString() : null,
-                                OS = row.Table.Columns.Contains("o/s") ? row["o/s"]?.ToString() : null,
-                                IloIdracIp = row.Table.Columns.Contains("ilo/idrac ip") ? row["ilo/idrac ip"]?.ToString() : null,
-                                Kabin = row.Table.Columns.Contains("_akabin") ? row["_akabin"]?.ToString() : (row.Table.Columns.Contains("_kabin") ? row["_kabin"]?.ToString() : null),
-                                RearFront = row.Table.Columns.Contains("Rear/Front") ? row["Rear/Front"]?.ToString() : null,
-                                KabinU = row.Table.Columns.Contains("kabin_u") ? row["kabin_u"]?.ToString() : null,
-                                IsttelkomEtiketId = row.Table.Columns.Contains("İsttelkom Etiket I") ? row["İsttelkom Etiket I"]?.ToString() : null,
+                                HostDns = row["Host DNS"]?.ToString()?.Trim(),
+                                IpAdress = row.Table.Columns.Contains("IP Adress") ? row["IP Adress"]?.ToString()?.Trim() : null,
+                                Model = row.Table.Columns.Contains("Model") ? row["Model"]?.ToString()?.Trim() : null,
+                                ServiceTag = row.Table.Columns.Contains("Service Tag / Serial Number") ? row["Service Tag / Serial Number"]?.ToString()?.Trim() : null,
+                                VcenterAdress = row.Table.Columns.Contains("Vcenter Adress") ? row["Vcenter Adress"]?.ToString()?.Trim() : null,
+                                Cluster = row.Table.Columns.Contains("Cluster") ? row["Cluster"]?.ToString()?.Trim() : null,
+                                Location = row.Table.Columns.Contains("Location") ? row["Location"]?.ToString()?.Trim() : null,
+                                OS = row.Table.Columns.Contains("o/s") ? row["o/s"]?.ToString()?.Trim() : null,
+                                IloIdracIp = row.Table.Columns.Contains("ilo/idrac ip") ? row["ilo/idrac ip"]?.ToString()?.Trim() : null,
+                                Kabin = row.Table.Columns.Contains("_akabin") ? row["_akabin"]?.ToString()?.Trim() : (row.Table.Columns.Contains("_kabin") ? row["_kabin"]?.ToString()?.Trim() : null),
+                                RearFront = row.Table.Columns.Contains("Rear/Front") ? row["Rear/Front"]?.ToString()?.Trim() : null,
+                                KabinU = row.Table.Columns.Contains("kabin_u") ? row["kabin_u"]?.ToString()?.Trim() : null,
+                                IsttelkomEtiketId = row.Table.Columns.Contains("İsttelkom Etiket I") ? row["İsttelkom Etiket I"]?.ToString()?.Trim() : null,
                                 DateAdded = DateTime.Now,
                                 LastUpdated = DateTime.Now
                             };
+
+                            // === GÜNCELLENEN BÖLÜM: PortAdedi'ni Oku ===
+                            if (row.Table.Columns.Contains("PortAdedi") && int.TryParse(row["PortAdedi"]?.ToString(), out int portAdedi))
+                            {
+                                server.PortAdedi = portAdedi;
+                            }
+                            // ==========================================
+
                             serversToImport.Add(server);
                         }
                     }
@@ -388,7 +393,6 @@ namespace BelbimEnv.Controllers
                 if (importOption == "replace")
                 {
                     _context.Servers.RemoveRange(_context.Servers);
-                    await _context.SaveChangesAsync();
                 }
 
                 await _context.Servers.AddRangeAsync(serversToImport);
@@ -397,7 +401,7 @@ namespace BelbimEnv.Controllers
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Veritabanına kayıt sırasında hata: {ex.Message}";
+                TempData["ErrorMessage"] = $"Veritabanına kayıt sırasında hata: {ex.InnerException?.Message ?? ex.Message}";
             }
             return RedirectToAction(nameof(Index));
         }
