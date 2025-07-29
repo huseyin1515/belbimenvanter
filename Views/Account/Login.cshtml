@@ -2,25 +2,25 @@
 
 @{
     ViewData["Title"] = "Giriş Yap";
-    Layout = "_LayoutAccount"; // Özel, menüsüz bir layout kullanacağız
+    Layout = "_LayoutAccount"; // Yeni, modern layout'u kullanıyoruz
 }
 
-<div class="text-center">
-    <i class="fas fa-server fa-3x text-primary mb-3"></i>
-    <h1 class="h3 mb-3 fw-normal">Kurumsal Envanter Sistemi</h1>
-    <p class="text-muted">Lütfen devam etmek için giriş yapın.</p>
-</div>
+<!-- Form başlığı ve açıklaması -->
+<h2 class="h4 fw-light text-center mb-1">Giriş Yapın</h2>
+<p class="text-center text-muted mb-4">Devam etmek için bilgilerinizi girin.</p>
 
+<!-- Formun kendisi -->
 <form asp-action="Login" asp-route-returnurl="@ViewData["ReturnUrl"]" method="post">
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+    <div asp-validation-summary="ModelOnly" class="alert alert-danger p-2 text-center" role="alert"></div>
 
     <div class="form-floating mb-3">
         <input asp-for="Username" class="form-control" placeholder="Kullanıcı Adı" required />
-        <label asp-for="Username"></label>
+        <label asp-for="Username"><i class="fas fa-user me-2"></i>Kullanıcı Adı</label>
     </div>
     <div class="form-floating mb-3">
         <input asp-for="Password" type="password" class="form-control" placeholder="Parola" required />
-        <label asp-for="Password"></label>
+        <label asp-for="Password"><i class="fas fa-lock me-2"></i>Parola</label>
     </div>
 
     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -28,12 +28,13 @@
             <input class="form-check-input" asp-for="RememberMe" />
             <label class="form-check-label" asp-for="RememberMe"></label>
         </div>
-        @*<a href="#" class="small">Parolamı unuttum</a>*@
     </div>
 
-    <button class="w-100 btn btn-lg btn-primary" type="submit">Giriş Yap</button>
+    <button class="w-100 btn btn-lg btn-primary" type="submit">
+        <i class="fas fa-sign-in-alt me-2"></i> Giriş Yap
+    </button>
 </form>
 
 <div class="text-center mt-4">
-    <p class="text-muted">Hesabınız yok mu? <a asp-action="Register">Hemen bir tane oluşturun</a>.</p>
+    <p class="text-muted small">Hesabınız yok mu? <a asp-action="Register">Hemen bir tane oluşturun</a>.</p>
 </div>

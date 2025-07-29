@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\BelbimEnv.csproj": {}
+    "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\belbimenvanter\\BelbimEnv.csproj": {}
   },
   "projects": {
-    "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\BelbimEnv.csproj": {
+    "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\belbimenvanter\\BelbimEnv.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\BelbimEnv.csproj",
+        "projectUniqueName": "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\belbimenvanter\\BelbimEnv.csproj",
         "projectName": "BelbimEnv",
-        "projectPath": "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\BelbimEnv.csproj",
+        "projectPath": "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\belbimenvanter\\BelbimEnv.csproj",
         "packagesPath": "C:\\Users\\Ozgur\\.nuget\\packages\\",
-        "outputPath": "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\obj\\",
+        "outputPath": "D:\\belbimEnvYedekler\\28bELBİM YEDEK\\belbimenvanter\\belbimenvanter\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

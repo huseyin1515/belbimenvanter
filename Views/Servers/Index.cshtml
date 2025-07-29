@@ -1,10 +1,15 @@
-﻿    @model BelbimEnv.Models.ServerFilterViewModel
+﻿@model BelbimEnv.Models.ServerFilterViewModel
 
 @{
     ViewData["Title"] = "Envanter Paneli";
+
+    // Filtrelerin uygulanıp uygulanmadığını kontrol etmek için bir değişken
+    bool isFiltered = Model.SelectedLocations.Any() || Model.SelectedModels.Any() ||
+                      Model.SelectedOS.Any() || Model.SelectedClusters.Any();
 }
 
-<!-- EXCEL YÜKLEME MODAL PENCERESİ -->
+@* === TÜM MODAL PENCERELER (Değişiklik yok, aynı kalıyor) === *@
+<!-- EXCEL YÜKLEME MODALI -->
 <div class="modal fade" id="excelUploadModal" tabindex="-1" aria-labelledby="excelUploadModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -32,7 +37,8 @@
             </form>
         </div>
     </div>
-</div><!-- GELİŞMİŞ FİLTRELEME MODALI -->
+</div>
+<!-- GELİŞMİŞ FİLTRELEME MODALI -->
 <div class="modal fade" id="filterModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
@@ -40,22 +46,46 @@
                 <div class="modal-header"><h5 class="modal-title"><i class="fas fa-filter me-2"></i>Gelişmiş Filtre</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="row g-4">
-                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Lokasyon</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Lokasyon ara..." data-target-list="#location-list"></div><div class="card-body filter-options" id="location-list">@foreach(var item in Model.AllLocations){
-                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedLocations" value="@item.Value" id="loc_@item.Value" @(Model.SelectedLocations.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="loc_@item.Value">@item.Text</label></div>
-                                                }
-</div></div></div>
-                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Model</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Model ara..." data-target-list="#model-list"></div><div class="card-body filter-options" id="model-list">@foreach(var item in Model.AllModels){
-                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedModels" value="@item.Value" id="mod_@item.Value" @(Model.SelectedModels.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="mod_@item.Value">@item.Text</label></div>
-                                                }
-</div></div></div>
-                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">İşletim Sistemi</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="İS ara..." data-target-list="#os-list"></div><div class="card-body filter-options" id="os-list">@foreach(var item in Model.AllOS){
-                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedOS" value="@item.Value" id="os_@item.Value" @(Model.SelectedOS.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="os_@item.Value">@item.Text</label></div>
-                                                }
-</div></div></div>
-                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Cluster</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Cluster ara..." data-target-list="#cluster-list"></div><div class="card-body filter-options" id="cluster-list">@foreach(var item in Model.AllClusters){
-                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedClusters" value="@item.Value" id="clus_@item.Value" @(Model.SelectedClusters.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="clus_@item.Value">@item.Text</label></div>
-                                                }
-</div></div></div>
+                        <div class="col-md-3">
+                            <div class="card h-100">
+                                <div class="card-header fw-bold">Lokasyon</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Lokasyon ara..." data-target-list="#location-list"></div><div class="card-body filter-options" id="location-list">
+                                    @foreach (var item in Model.AllLocations)
+                                    {
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedLocations" value="@item.Value" id="loc_@item.Value" @(Model.SelectedLocations.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="loc_@item.Value">@item.Text</label></div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card h-100">
+                                <div class="card-header fw-bold">Model</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Model ara..." data-target-list="#model-list"></div><div class="card-body filter-options" id="model-list">
+                                    @foreach (var item in Model.AllModels)
+                                    {
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedModels" value="@item.Value" id="mod_@item.Value" @(Model.SelectedModels.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="mod_@item.Value">@item.Text</label></div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card h-100">
+                                <div class="card-header fw-bold">İşletim Sistemi</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="İS ara..." data-target-list="#os-list"></div><div class="card-body filter-options" id="os-list">
+                                    @foreach (var item in Model.AllOS)
+                                    {
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedOS" value="@item.Value" id="os_@item.Value" @(Model.SelectedOS.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="os_@item.Value">@item.Text</label></div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card h-100">
+                                <div class="card-header fw-bold">Cluster</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Cluster ara..." data-target-list="#cluster-list"></div><div class="card-body filter-options" id="cluster-list">
+                                    @foreach (var item in Model.AllClusters)
+                                    {
+                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedClusters" value="@item.Value" id="clus_@item.Value" @(Model.SelectedClusters.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="clus_@item.Value">@item.Text</label></div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer"><a asp-action="Index" class="btn btn-secondary me-auto">Filtreyi Temizle</a><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button><button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> Filtrele</button></div>
@@ -63,7 +93,7 @@
         </div>
     </div>
 </div>
-<!-- YENİ DIŞARI AKTARMA MODAL PENCERESİ -->
+<!-- DIŞARI AKTARMA MODALI -->
 <div class="modal fade" id="exportExcelModal" tabindex="-1" aria-labelledby="exportExcelModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -101,43 +131,116 @@
 </div>
 
 
-<!-- Sayfa Başlığı, Arama ve Butonlar -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="text-primary"><i class="fas fa-server me-2"></i>@ViewData["Title"]</h3>
-    <div>
-        <div class="input-group d-inline-flex" style="width: 350px;">
-            <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" id="serverSearchInput" class="form-control" placeholder="Envanter bilgilerinde ara...">
+@* === YENİ VE MODERN SAYFA YAPISI === *@
+
+<!-- 1. BÖLÜM: Sayfa Başlığı ve Genel Bakış Kartları -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+</div>
+
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row g-0 align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-primary text-uppercase mb-1">Toplam Cihaz Sayısı</div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">@Model.Servers.Count()</div>
+                    </div>
+                    <div class="col-auto"><i class="fas fa-server fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
         </div>
-
-        <!-- EKSİK OLAN VE YENİDEN EKLENEN BUTON -->
-        <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#filterModal">
-            <i class="fas fa-filter me-1"></i> Filtrele
-        </button>
-        <button type="button" class="btn btn-warning ms-2" data-bs-toggle="modal" data-bs-target="#exportExcelModal">
-            <i class="fas fa-file-export me-1"></i> Dışarı Aktar
-        </button>
-
-        @if (User.IsInRole("SuperUser"))
-        {
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#excelUploadModal">
-                <i class="fas fa-file-excel me-1"></i> Excel ile Yükle
-            </button>
-            <a asp-action="Create" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i> Yeni Envanter Ekle
-            </a>
-        }
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row g-0 align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-info text-uppercase mb-1">Farklı Lokasyon Sayısı</div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">@Model.AllLocations.Count()</div>
+                    </div>
+                    <div class="col-auto"><i class="fas fa-map-marker-alt fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row g-0 align-items-center">
+                    <div class="col">
+                        <div class="text-xs fw-bold text-success text-uppercase mb-1">Farklı Model Sayısı</div>
+                        <div class="h5 mb-0 fw-bold text-gray-800">@Model.AllModels.Count()</div>
+                    </div>
+                    <div class="col-auto"><i class="fas fa-laptop-code fa-2x text-gray-300"></i></div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
-<!-- SUNUCU LİSTESİ KARTI -->
-<div class="card shadow-sm">
+<!-- 2. BÖLÜM: Filtre, Arama ve İşlem Butonları -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-search me-1"></i>Envanter Arama ve İşlemler</h6>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 justify-content-between">
+            <!-- Arama Kutusu -->
+            <div class="input-group" style="max-width: 400px;">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" id="serverSearchInput" class="form-control" placeholder="Tablo içinde hızlı ara...">
+            </div>
+
+            <!-- Buton Grupları -->
+            <div class="btn-toolbar" role="toolbar">
+                <div class="btn-group me-2" role="group">
+                    <!-- Gelişmiş Filtre (İkincil, Bilgi) -->
+                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#filterModal">
+                        <i class="fas fa-filter me-1"></i> Gelişmiş Filtre
+                    </button>
+                    @if (isFiltered)
+                    {
+                        <!-- Filtre Temizle (Tehlike) -->
+                        <a asp-action="Index" class="btn btn-danger" title="Filtreyi Temizle">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    }
+                    <!-- Dışarı Aktar (Uyarı) -->
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exportExcelModal">
+                        <i class="fas fa-file-export me-1"></i> Dışarı Aktar
+                    </button>
+                </div>
+                @if (User.IsInRole("SuperUser"))
+                {
+                    <div class="btn-group" role="group">
+                        <!-- Excel Yükle (Başarı) -->
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#excelUploadModal">
+                            <i class="fas fa-file-excel me-1"></i> Excel Yükle
+                        </button>
+                        <!-- Yeni Ekle (Ana Eylem) -->
+                        <a asp-action="Create" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i> Yeni Envanter Ekle
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- 3. BÖLÜM: Sunucu Listesi Tablosu -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 fw-bold text-primary">Envanter Listesi (@Model.Servers.Count() sonuç)</h6>
+    </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover table-bordered table-sm">
-                <thead class="table-dark">
+            <table class="table table-hover" id="serverTable">
+                <thead>
                     <tr>
-                        <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["IdSortParm"]">ID <i class="fas fa-sort"></i></a></th>
                         <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["HostDnsSortParm"]">Host DNS <i class="fas fa-sort"></i></a></th>
                         <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["IpAdressSortParm"]">IP Adresi <i class="fas fa-sort"></i></a></th>
                         <th><a class="sort-link" asp-action="Index" asp-route-sortOrder="@ViewData["ModelSortParm"]">Model <i class="fas fa-sort"></i></a></th>
@@ -147,21 +250,35 @@
                     </tr>
                 </thead>
                 <tbody id="serverTableBody">
-                    @if (Model.Servers == null || !Model.Servers.Any())
+                    @if (!Model.Servers.Any())
                     {
-                        <tr><td colspan="7" class="text-center py-4"><p class="text-muted">Henüz hiç envanter kaydı bulunmuyor.</p></td></tr>
+                        <tr>
+                            <td colspan="6">
+                                <div class="text-center p-4">
+                                    <i class="fas fa-info-circle fa-3x text-warning mb-3"></i>
+                                    <h5 class="text-muted">Sonuç Bulunamadı</h5>
+                                    <p>
+                                        Mevcut kriterlere uygun envanter kaydı bulunmuyor. <br />
+                                        Filtreleri temizleyerek yeniden deneyebilirsiniz.
+                                    </p>
+                                    <a asp-action="Index" class="btn btn-primary mt-2">Filtreleri Temizle</a>
+                                </div>
+                            </td>
+                        </tr>
                     }
                     else
                     {
                         @foreach (var item in Model.Servers)
                         {
                             <tr>
-                                <td>@item.Id</td>
-                                <td>@item.HostDns</td>
+                                <td>
+                                    <strong>@item.HostDns</strong>
+                                    <small class="d-block text-muted">ID: @item.Id</small>
+                                </td>
                                 <td>@item.IpAdress</td>
-                                <td>@item.Model</td>
+                                <td><span class="badge bg-secondary">@item.Model</span></td>
                                 <td>@item.ServiceTag</td>
-                                <td>@item.Location</td>
+                                <td><i class="fas fa-map-marker-alt text-muted me-1"></i>@item.Location</td>
                                 <td class="text-end text-nowrap">
                                     <a asp-controller="PortDetaylari" asp-action="Manage" asp-route-id="@item.Id" class="btn btn-sm btn-outline-success" title="Port Detaylarını Yönet"><i class="fas fa-network-wired"></i></a>
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Detaylar"><i class="fas fa-info-circle"></i></a>
@@ -186,15 +303,23 @@
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // ARAMA SCRİPT'İ
+            // HIZLI ARAMA SCRİPT'İ
             const searchInput = document.getElementById('serverSearchInput');
             const tableBody = document.getElementById('serverTableBody');
             if (tableBody) {
                 const rows = tableBody.getElementsByTagName('tr');
                 const noResultsMessage = document.getElementById('serverNoResultsMessage');
+                const table = document.getElementById('serverTable');
+
                 searchInput.addEventListener('keyup', function() {
                     const filterText = searchInput.value.toLowerCase();
                     let visibleRowCount = 0;
+
+                    if(rows.length === 1 && rows[0].getElementsByTagName('td').length === 1) {
+                         // Bu, "Sonuç Bulunamadı" özel satırıdır, aramayı es geç.
+                        return;
+                    }
+
                     for (let i = 0; i < rows.length; i++) {
                         const rowText = rows[i].textContent.toLowerCase();
                         if (rowText.includes(filterText)) {
@@ -205,12 +330,13 @@
                         }
                     }
                     if (noResultsMessage) {
+                        table.style.display = (visibleRowCount === 0) ? "none" : "";
                         noResultsMessage.style.display = (visibleRowCount === 0) ? "block" : "none";
                     }
                 });
             }
 
-            // MODAL SCRİPT'İ
+            // MODAL İÇİN DOSYA YÜKLEME SCRİPT'İ
             const dropArea = document.getElementById('drop-area');
             const fileInput = document.getElementById('fileInput');
             const fileNameDisplay = document.getElementById('file-name-display');
@@ -236,31 +362,93 @@
                 });
             }
 
-        // FİLTRE İÇİ ARAMA SCRİPT'İ
-                 document.querySelectorAll('.filter-search').forEach(input => {
-                     input.addEventListener('keyup', function() {
-                         const filterText = this.value.toLowerCase();
-                         const targetListId = this.dataset.targetList;
-                         const listContainer = document.querySelector(targetListId);
-                         if (listContainer) {
-                             listContainer.querySelectorAll('.form-check').forEach(item => {
-                                 const label = item.querySelector('label');
-                                 if (label && label.textContent.toLowerCase().includes(filterText)) {
-                                     item.style.display = "";
-                                 } else {
-                                     item.style.display = "none";
-                                 }
-                             });
-                         }
-                     });
+            // FİLTRE MODALI İÇİNDEKİ ARAMA SCRİPT'İ
+            document.querySelectorAll('.filter-search').forEach(input => {
+                 input.addEventListener('keyup', function() {
+                     const filterText = this.value.toLowerCase();
+                     const targetListId = this.dataset.targetList;
+                     const listContainer = document.querySelector(targetListId);
+                     if (listContainer) {
+                         listContainer.querySelectorAll('.form-check').forEach(item => {
+                             const label = item.querySelector('label');
+                             if (label && label.textContent.toLowerCase().includes(filterText)) {
+                                 item.style.display = "";
+                             } else {
+                                 item.style.display = "none";
+                             }
+                         });
+                     }
                  });
              });
+         });
     </script>
 }
 
 @section Styles {
     <style>
-        /* Modal için stiller */
+        /* === YENİ VE MODERN STİLLER === */
+        body {
+            background-color: #f8f9fc;
+        }
+
+        .card {
+            border: none;
+        }
+
+        .border-left-primary {
+            border-left: .25rem solid #4e73df !important;
+        }
+
+        .border-left-success {
+            border-left: .25rem solid #1cc88a !important;
+        }
+
+        .border-left-info {
+            border-left: .25rem solid #36b9cc !important;
+        }
+
+        .border-left-warning {
+            border-left: .25rem solid #f6c23e !important;
+        }
+
+        .text-xs {
+            font-size: .7rem;
+        }
+
+        .text-gray-300 {
+            color: #dddfeb !important;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
+
+        /* Tablo Stilleri */
+        #serverTable thead {
+            background-color: #f8f9fc;
+            color: #5a5c69;
+            border-bottom: 2px solid #e3e6f0;
+        }
+
+        #serverTable th {
+            font-weight: 600;
+            border: none;
+        }
+
+        #serverTable td {
+            vertical-align: middle;
+        }
+
+        .sort-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+            .sort-link:hover {
+                color: #4e73df;
+            }
+
+        /* Modal için sürükle-bırak stilleri */
         .border-dashed {
             border-style: dashed !important;
         }
@@ -273,17 +461,8 @@
             border-color: var(--bs-primary);
             background-color: var(--bs-light);
         }
-        /* Sıralama linkleri için stiller */
-        .sort-link {
-            color: white;
-            text-decoration: none;
-        }
 
-            .sort-link:hover {
-                color: #adb5bd;
-                text-decoration: none;
-            }
-
+        /* Filtreleme modalı içindeki listeler */
         .filter-options {
             max-height: 250px;
             overflow-y: auto;

@@ -5,187 +5,230 @@
 @{
     ViewData["Title"] = "Port Detayı";
     var targetDevice = ViewData["TargetDevice"] as Server;
+    string macWwpnValue = Model.PortTipi switch
+    {
+        PortTipiEnum.FC => Model.FiberMAC,
+        PortTipiEnum.VirtualFC => Model.FiberMAC,
+        PortTipiEnum.Bakir => Model.BakirMAC,
+        PortTipiEnum.VirtualBakir => Model.BakirMAC,
+        PortTipiEnum.FiberForSAN => Model.Wwpn,
+        _ => "N/A"
+    };
+    string macWwpnLabel = Model.PortTipi switch
+    {
+        PortTipiEnum.FC => "Fiber MAC",
+        PortTipiEnum.VirtualFC => "Fiber MAC",
+        PortTipiEnum.Bakir => "Bakır MAC",
+        PortTipiEnum.VirtualBakir => "Bakır MAC",
+        PortTipiEnum.FiberForSAN => "WWPN",
+        _ => "MAC/WWPN"
+    };
 }
 
-<div class="card shadow-sm">
-    <div class="card-header bg-light">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-0 text-dark"><i class="fas fa-network-wired me-2"></i>Port Detayı: @Model.Aciklama</h4>
-            <a asp-action="Manage" asp-route-id="@Model.ServerId" class="btn btn-outline-secondary btn-sm"><i class="fas fa-arrow-left me-1"></i> Port Yönetim Sayfasına Dön</a>
-        </div>
+<!-- Sayfa Başlığı ve Butonlar -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+        <p class="mb-0 text-muted">@Model.Aciklama</p>
     </div>
-    <div class="card-body">
+    <div>
+        <a asp-controller="Servers" asp-action="Details" asp-route-id="@Model.ServerId" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Sunucu Detayına Dön
+        </a>
+        @if (User.IsInRole("SuperUser"))
+        {
+            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Bu Portu Düzenle
+            </a>
+        }
+    </div>
+</div>
 
-        <div class="row">
-            <!-- Sol Taraf: Cihaz ve Port Bilgileri -->
-            <div class="col-md-6">
-                <h5><i class="fas fa-server text-primary me-2"></i>Kaynak Cihaz ve Port</h5>
-                <hr class="mt-1" />
-                <dl class="row">
-                    <dt class="col-sm-4">Ait Olduğu Cihaz</dt>
-                    <dd class="col-sm-8"><a asp-controller="Servers" asp-action="Details" asp-route-id="@Model.ServerId">@Model.Server.HostDns</a></dd>
-                    <dt class="col-sm-4">Port Tipi</dt>
-                    <dd class="col-sm-8"><span class="badge bg-info text-dark fs-6">@Model.PortTipi.GetDisplayName()</span></dd>
-                    @if (Model.PortTipi == PortTipiEnum.FC || Model.PortTipi == PortTipiEnum.VirtualFC)
-                    {
-                        <dt class="col-sm-4">Fiber MAC</dt>
-                        <dd class="col-sm-8">@Model.FiberMAC</dd>
- }
-                    else if (Model.PortTipi == PortTipiEnum.Bakir || Model.PortTipi == PortTipiEnum.VirtualBakir)
-                    {
-                        <dt class="col-sm-4">Bakır MAC</dt>
-                        <dd class="col-sm-8">@Model.BakirMAC</dd>
- }
-                    else if (Model.PortTipi == PortTipiEnum.FiberForSAN)
-                    {
-                        <dt class="col-sm-4">WWPN</dt>
-                        <dd class="col-sm-8">@Model.Wwpn</dd>
- }
-                    <dt class="col-sm-4">NIC ID</dt>
-                    <dd class="col-sm-8">@Model.NicId</dd>
-                    <dt class="col-sm-4">Port ID</dt>
-                    <dd class="col-sm-8">@Model.PortId</dd>
+<!-- 1. BÖLÜM: Port Detayları (İki Sütunlu Kartlar) -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">Fiziksel Port Bilgileri</h6></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Port Tipi</dt>
+                    <dd class="col-sm-7"><span class="badge bg-info text-dark fs-6">@Model.PortTipi.GetDisplayName()</span></dd>
+                    <dt class="col-sm-5">@macWwpnLabel</dt>
+                    <dd class="col-sm-7"><code>@macWwpnValue</code></dd>
+                    <dt class="col-sm-5">NIC ID</dt>
+                    <dd class="col-sm-7">@(Model.NicId ?? "-")</dd>
+                    <dt class="col-sm-5">Port ID</dt>
+                    <dd class="col-sm-7">@(Model.PortId ?? "-")</dd>
                 </dl>
             </div>
-
-            <!-- Sağ Taraf: Karşı Uç (Switch) ve Bağlantı Durumu -->
-            <div class="col-md-6">
-                <h5><i class="fas fa-random text-primary me-2"></i>Karşı Uç ve Bağlantı Durumu</h5>
-                <hr class="mt-1" />
-                <dl class="row">
-                    <dt class="col-sm-4">Switch Adı</dt>
-                    <dd class="col-sm-8">@Model.SwName</dd>
-                    <dt class="col-sm-4">Switch Port</dt>
-                    <dd class="col-sm-8">@Model.SwPort</dd>
-                    <dt class="col-sm-4">Uç Port</dt>
-                    <dd class="col-sm-8">@Model.UcPort</dd>
-                    <dt class="col-sm-4">Switch'de Uç mu?</dt>
-                    <dd class="col-sm-8">@Model.SwdeUcMi</dd>
-                    <dt class="col-sm-4">Link Durumu</dt>
-                    <dd class="col-sm-8">
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">Bağlantı ve Switch Bilgileri</h6></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Link Durumu</dt>
+                    <dd class="col-sm-7">
                         @if (Model.LinkStatus?.ToLower() == "up")
                         {
                             <span class="badge bg-success fs-6">Up</span>
-                            ;
                         }
                         else if (Model.LinkStatus?.ToLower() == "down")
                         {
 
                             <span class="badge bg-danger fs-6">Down</span>
-                            ;
                         }
                         else
                         {
 
                             <span class="badge bg-secondary fs-6">@Model.LinkStatus</span>
-                            ;
                         }
                     </dd>
-                    <dt class="col-sm-4">Link Hızı</dt>
-                    <dd class="col-sm-8">@Model.LinkSpeed Mbps</dd>
+                    <dt class="col-sm-5">Link Hızı</dt>
+                    <dd class="col-sm-7">@(Model.LinkSpeed ?? "-") Mbps</dd>
+                    <dt class="col-sm-5">Switch Adı</dt>
+                    <dd class="col-sm-7">@(Model.SwName ?? "-")</dd>
+                    <dt class="col-sm-5">Switch Port</dt>
+                    <dd class="col-sm-7">@(Model.SwPort ?? "-")</dd>
                 </dl>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- YENİ EKLENEN BAĞLANTI ŞEMASI BÖLÜMÜ -->
-        <h5 class="mt-5"><i class="fas fa-project-diagram text-primary me-2"></i>Bağlantı Şeması</h5>
-        <hr class="mt-1" />
+<!-- 2. BÖLÜM: Bağlantı Şeması -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-project-diagram me-1"></i>Bağlantı Şeması</h6>
+    </div>
+    <div class="card-body">
         <div class="connection-schema">
+            <!-- Kaynak Cihaz -->
             <div class="device-box source">
-                <div class="device-header">Kaynak Cihaz</div>
+                <div class="device-header"><i class="fas fa-server me-2"></i>Kaynak Cihaz</div>
                 <div class="device-body">
                     <strong><a asp-controller="Servers" asp-action="Details" asp-route-id="@Model.ServerId">@Model.Server.HostDns</a></strong>
                     <small class="text-muted d-block">@Model.Server.Model</small>
-                    <hr class="my-1"><div class="port-info"><span>Port ID: @Model.PortId</span><span>NIC: @Model.NicId</span></div>
+                    <hr class="my-2">
+                    <div class="port-info"><span>Port ID: @(Model.PortId ?? "-")</span><span>NIC: @(Model.NicId ?? "-")</span></div>
                 </div>
             </div>
+            <!-- Bağlantı Oku -->
             <div class="connection-link">
                 <div class="cable-type">@Model.PortTipi.GetDisplayName()</div>
                 <div class="arrow"></div>
-                <div class="speed-info">@Model.LinkSpeed Mbps</div>
+                <div class="speed-info">
+                    @if (Model.LinkStatus?.ToLower() == "up")
+                    {
+                        <i class="fas fa-check-circle text-success"></i>
+                    }
+                    else if (Model.LinkStatus?.ToLower() == "down")
+                    {
+
+                        <i class="fas fa-times-circle text-danger"></i>
+                    }
+                    else
+                    {
+
+                        <i class="fas fa-question-circle text-muted"></i>
+                    }
+                    @Model.LinkSpeed Mbps
+                </div>
             </div>
+            <!-- Hedef Cihaz -->
             <div class="device-box target @(targetDevice == null ? "unknown" : "")">
-                <div class="device-header">Hedef Cihaz (Switch)</div>
+                <div class="device-header"><i class="fas fa-ethernet me-2"></i>Hedef Cihaz (Switch)</div>
                 <div class="device-body">
                     @if (targetDevice != null)
                     {
                         <strong><a asp-controller="Servers" asp-action="Details" asp-route-id="@targetDevice.Id">@targetDevice.HostDns</a></strong>
                         <small class="text-muted d-block">@targetDevice.Model</small>
-                        <hr class="my-1">
-
-                        <div class="port-info"><span>Port: @Model.SwPort</span></div>
+                        <hr class="my-2">
+                        <div class="port-info"><span>Port: @(Model.SwPort ?? "-")</span></div>
                     }
                     else
                     {
-                        <strong>@Model.SwName</strong>
+                        <strong>@(Model.SwName ?? "Bilinmiyor")</strong>
                         <small class="text-muted d-block">(Bu cihaz envanterde bulunamadı)</small>
                     }
                 </div>
             </div>
         </div>
-
     </div>
-    @if (User.IsInRole("SuperUser"))
-    {
-        <div class="card-footer text-end">
-            <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-primary"><i class="fas fa-edit me-1"></i> Bu Portu Düzenle</a>
-        </div>
-    }
 </div>
+
 
 @section Styles {
     <style>
+        /* Modern Tema Stilleri */
+        body {
+            background-color: #f8f9fc;
+        }
+
+        .card {
+            border: none;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
+
+        /* Bağlantı Şeması Stilleri */
         .connection-schema {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 2rem 1rem;
-            background-color: #f8f9fa;
-            border-radius: .5rem;
+            justify-content: space-around;
+            padding: 1.5rem;
+            gap: 1rem;
         }
 
         .device-box {
-            width: 40%;
-            border: 1px solid #dee2e6;
-            border-radius: .5rem;
+            flex: 1;
+            border: 1px solid #e3e6f0;
+            border-radius: .35rem;
             background-color: #fff;
-            box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+            box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15) !important;
+            max-width: 400px;
         }
 
         .device-header {
-            padding: .5rem 1rem;
-            background-color: #e9ecef;
+            padding: .75rem 1.25rem;
             font-weight: bold;
-            border-bottom: 1px solid #dee2e6;
+            border-bottom: 1px solid #e3e6f0;
         }
 
         .device-box.source .device-header {
-            background-color: #cfe2ff;
+            background-color: #f8f9fc;
+            color: #4e73df;
         }
 
         .device-box.target .device-header {
-            background-color: #d1e7dd;
+            background-color: #f8f9fc;
+            color: #1cc88a;
         }
 
         .device-box.target.unknown .device-header {
-            background-color: #fff3cd;
+            background-color: #f8f9fc;
+            color: #f6c23e;
         }
 
         .device-body {
-            padding: 1rem;
+            padding: 1.25rem;
         }
 
         .port-info {
-            font-size: .875em;
-            color: #6c757d;
+            font-size: .8em;
+            color: #858796;
             display: flex;
             justify-content: space-between;
         }
 
         .connection-link {
-            width: 20%;
             text-align: center;
             position: relative;
+            flex-shrink: 0;
+            width: 150px;
         }
 
         .cable-type {
@@ -195,8 +238,8 @@
         }
 
         .arrow {
-            height: 4px;
-            background: linear-gradient(to right, #6c757d, #212529, #6c757d);
+            height: 3px;
+            background-color: #858796;
             position: relative;
         }
 
@@ -204,15 +247,15 @@
                 content: '';
                 position: absolute;
                 right: -1px;
-                top: -6px;
-                border-top: 8px solid transparent;
-                border-bottom: 8px solid transparent;
-                border-left: 12px solid #212529;
+                top: -5px;
+                border-top: 7px solid transparent;
+                border-bottom: 7px solid transparent;
+                border-left: 10px solid #858796;
             }
 
         .speed-info {
             font-size: .8em;
-            color: #6c757d;
+            color: #858796;
             margin-top: 5px;
         }
     </style>

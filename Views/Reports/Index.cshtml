@@ -2,106 +2,76 @@
 
 @{
     ViewData["Title"] = "Raporlama Paneli";
+    // GRAFİK İÇİN LOKASYON SAYISINI ÖNCEDEN ALIYORUZ
+    var locationCount = Model.PortsByLocation.Count;
 }
 
-<h3 class="mb-4"><i class="fas fa-chart-line me-2"></i>@ViewData["Title"]</h3>
+<!-- Sayfa Başlığı -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+</div>
 
-<!-- 1. BÖLÜM: GELİŞTİRİLMİŞ İSTATİSTİK KARTLARI -->
-<div class="row g-4">
-    <div class="col-lg-3 col-md-6">
-        <div class="card text-white bg-primary shadow h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <i class="fas fa-server fa-3x"></i>
-                    <div class="text-end">
-                        <div class="display-4">@Model.TotalServers</div>
-                        <div class="small">Toplam Cihaz</div>
-                    </div>
-                </div>
-            </div>
+<!-- 1. BÖLÜM: Genel Bakış Kartları -->
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2"><div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-primary text-uppercase mb-1">Toplam Fiziksel Cihaz</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalServers</div></div><div class="col-auto"><i class="fas fa-server fa-2x text-gray-300"></i></div></div></div></div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2"><div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-info text-uppercase mb-1">Toplam Sanal Makine</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalVirtualMachines</div></div><div class="col-auto"><i class="fas fa-desktop fa-2x text-gray-300"></i></div></div></div></div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2"><div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-warning text-uppercase mb-1">Toplam Port</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalPorts</div></div><div class="col-auto"><i class="fas fa-network-wired fa-2x text-gray-300"></i></div></div></div></div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2"><div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-success text-uppercase mb-1">Aktif Portlar (Up)</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.TotalUpPorts</div></div><div class="col-auto"><i class="fas fa-power-off fa-2x text-gray-300"></i></div></div></div></div>
+    </div>
+</div>
+
+<!-- 2. BÖLÜM: Grafik Alanı -->
+<div class="row">
+    <!-- SOL TARAF GRAFİKLER -->
+    <div class="col-xl-8 col-lg-7">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">Lokasyonlara Göre Port Dağılımı</h6></div>
+            <div class="card-body"><canvas id="portsByLocationChart"></canvas></div>
+        </div>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 fw-bold text-success">İşletim Sistemi Dağılımı (Fiziksel)</h6></div>
+            <div class="card-body"><canvas id="osDistributionChart"></canvas></div>
         </div>
     </div>
-    <div class="col-lg-3 col-md-6">
-        <div class="card text-white bg-secondary shadow h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <i class="fas fa-network-wired fa-3x"></i>
-                    <div class="text-end">
-                        <div class="display-4">@Model.TotalPorts</div>
-                        <div class="small">Toplam Port</div>
-                    </div>
-                </div>
-            </div>
+    <!-- SAĞ TARAF GRAFİKLER -->
+    <div class="col-xl-4 col-lg-5">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 fw-bold" style="color: #6f42c1;">Port Tipleri</h6></div>
+            <div class="card-body"><canvas id="portsByTypeChart"></canvas></div>
         </div>
-    </div>
-    <div class="col-lg-6 col-md-12">
-        <div class="card shadow h-100">
-            <div class="card-body">
-                <h6 class="card-title text-muted">Genel Port Aktiflik Oranı</h6>
-                <div class="progress mt-3" style="height: 30px;">
-                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: @Model.OverallUpPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"
-                         aria-valuenow="@Model.OverallUpPercentage" aria-valuemin="0" aria-valuemax="100">
-                        <strong class="fs-6">%@Model.OverallUpPercentage.ToString("0") Aktif</strong>
-                    </div>
-                </div>
-                <div class="d-flex justify-content-between mt-2 small text-muted">
-                    <span><i class="fas fa-check-circle text-success"></i> @Model.TotalUpPorts Up</span>
-                    <span><i class="fas fa-times-circle text-danger"></i> @Model.TotalDownPorts Down</span>
-                </div>
-            </div>
+        <div class="card shadow mb-4">
+            <div class="card-header py-3"><h6 class="m-0 fw-bold text-info">En Yoğun 5 Cluster (VM Sayısı)</h6></div>
+            <div class="card-body"><canvas id="topClustersChart"></canvas></div>
         </div>
     </div>
 </div>
 
-<!-- 2. BÖLÜM: GRAFİKLER (YENİLER EKLENDİ) -->
-<div class="row g-4 mt-3">
-    <div class="col-lg-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-pie-chart me-2 text-info"></i>Port Durum Dağılımı</h5>
-                <canvas id="portStatusChart"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-tags me-2 text-warning"></i>Port Tiplerine Göre Dağılım</h5>
-                <canvas id="portsByTypeChart"></canvas>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-4">
-        <div class="card shadow-sm h-100">
-            <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-server me-2 text-primary"></i>En Çok Porta Sahip 5 Cihaz</h5>
-                <canvas id="topServersChart"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- 3. BÖLÜM: SUNUCU BAZLI DETAYLI DÖKÜM -->
-<div class="card shadow-sm mt-4">
-    <div class="card-header"><h5 class="mb-0"><i class="fas fa-list-ul me-2"></i>Cihaz Bazlı Port Durumu</h5></div>
-    <div class="card-body p-0">
+<!-- 3. BÖLÜM: Cihaz Bazlı Detaylı Döküm Tablosu -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3"><h6 class="m-0 fw-bold text-danger">Cihaz Bazlı Port Aktiflik Durumu</h6></div>
+    <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover table-sm mb-0">
-                <thead class="table-light">
-                    <tr><th>Cihaz</th><th class="text-center">Toplam Port</th><th class="text-center">Aktif Port</th><th class="text-center">Pasif Port</th><th>Aktiflik Oranı</th></tr>
-                </thead>
+            <table class="table table-hover" id="serverReportsTable">
+                <thead><tr><th>Cihaz</th><th class="text-center">Toplam Port</th><th class="text-center">Aktif Port</th><th class="text-center">Pasif Port</th><th>Aktiflik Oranı</th></tr></thead>
                 <tbody>
                     @foreach (var r in Model.ServerReports)
                     {
                         <tr>
-                            <td><a asp-controller="Servers" asp-action="Details" asp-route-id="@r.ServerId">@r.HostDns</a></td>
+                            <td><strong><a asp-controller="Servers" asp-action="Details" asp-route-id="@r.ServerId">@r.HostDns</a></strong></td>
                             <td class="text-center">@r.TotalPorts</td>
                             <td class="text-center text-success fw-bold">@r.UpPorts</td>
                             <td class="text-center text-danger fw-bold">@r.DownPorts</td>
                             <td>
                                 <div class="progress" style="height: 20px;">
                                     <div class="progress-bar @(r.UpPercentage > 75 ? "bg-success" : (r.UpPercentage > 40 ? "bg-warning" : "bg-danger"))" role="progressbar" style="width: @r.UpPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%;"
-                                         aria-valuenow="@r.UpPercentage" aria-valuemin="0" aria-valuemax="100">
+                                         aria-valuenow="@r.UpPercentage" aria-valuemin="0" aria-valuax="100">
                                         %@r.UpPercentage.ToString("0")
                                     </div>
                                 </div>
@@ -117,51 +87,125 @@
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // YENİ GRAFİK: Port Durum Dağılımı (Pasta)
-            new Chart(document.getElementById('portStatusChart').getContext('2d'), {
-                type: 'pie',
-                data: {
-                    labels: @Json.Serialize(Model.PortStatusDistribution.Keys),
-                    datasets: [{
-                        data: @Json.Serialize(Model.PortStatusDistribution.Values),
-                        backgroundColor: ['#198754', '#dc3545', '#6c757d'],
-                    }]
-                },
-                options: { responsive: true, plugins: { legend: { position: 'top' } } }
-            });
+            // RENK PALETİ TANIMLAMASI
+            const primaryColor = '#4e73df', successColor = '#1cc88a', infoColor = '#36b9cc', warningColor = '#f6c23e', dangerColor = '#e74a3b', secondaryColor = '#858796', customPurple = '#6f42c1';
+
+            // === GÜNCELLENEN BÖLÜM: Canlı ve çeşitli bir renk paleti ===
+            const vibrantPalette = [
+                '#4e73df', '#6f42c1', '#1cc88a', '#e74a3b', '#fd7e14', '#f6c23e', '#36b9cc', '#d63384'
+            ];
+
+            // Lokasyon grafiği için, lokasyon sayısı kadar renk üret. Palet yetmezse başa döner.
+            const locationChartColors = [];
+            const locationCount = @locationCount;
+            for (let i = 0; i < locationCount; i++) {
+                locationChartColors.push(vibrantPalette[i % vibrantPalette.length]);
+            }
+            // ==========================================================
 
             // Port Tiplerine Göre Dağılım (Halka)
             new Chart(document.getElementById('portsByTypeChart').getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: @Json.Serialize(Model.PortsByType.Keys),
-                    datasets: [{
-                        data: @Json.Serialize(Model.PortsByType.Values),
-                        backgroundColor: ['#0d6efd', '#6f42c1', '#d63384', '#fd7e14', '#20c997', '#ffc107'],
-                    }]
+                    datasets: [{ data: @Json.Serialize(Model.PortsByType.Values), backgroundColor: [customPurple, successColor, infoColor, warningColor, dangerColor, secondaryColor] }]
                 },
-                options: { responsive: true, plugins: { legend: { position: 'top' } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
             });
 
-            // YENİ GRAFİK: En Çok Porta Sahip Sunucular (Yatay Çubuk)
-            new Chart(document.getElementById('topServersChart').getContext('2d'), {
+            // Lokasyonlara Göre Dağılım (Yatay Çubuk) - RENKLER GÜNCELLENDİ
+            new Chart(document.getElementById('portsByLocationChart').getContext('2d'), {
                 type: 'bar',
                 data: {
-                    labels: @Json.Serialize(Model.TopServersByPortCount.Keys),
+                    labels: @Json.Serialize(Model.PortsByLocation.Keys),
                     datasets: [{
                         label: 'Port Sayısı',
-                        data: @Json.Serialize(Model.TopServersByPortCount.Values),
-                        backgroundColor: 'rgba(13, 110, 253, 0.7)',
-                        borderColor: 'rgba(13, 110, 253, 1)',
-                        borderWidth: 1
+                        data: @Json.Serialize(Model.PortsByLocation.Values),
+                        backgroundColor: locationChartColors // Artık tek renk değil, renk dizisi kullanılıyor
                     }]
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    plugins: { legend: { display: false } }
-                }
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } }
+            });
+
+            // İşletim Sistemi Dağılımı (Yatay Çubuk)
+            new Chart(document.getElementById('osDistributionChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: @Json.Serialize(Model.OsDistribution.Keys),
+                    datasets: [{ label: 'Cihaz Sayısı', data: @Json.Serialize(Model.OsDistribution.Values), backgroundColor: successColor }]
+                },
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } }
+            });
+
+            // En Yoğun Clusterlar (Dikey Çubuk)
+            new Chart(document.getElementById('topClustersChart').getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: @Json.Serialize(Model.TopClustersByVmCount.Keys),
+                    datasets: [{ label: 'VM Sayısı', data: @Json.Serialize(Model.TopClustersByVmCount.Values), backgroundColor: infoColor }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
         });
     </script>
+}
+
+@section Styles {
+    <style>
+        /* Modern Tema Stilleri (Aynı kalıyor) */
+        body {
+            background-color: #f8f9fc;
+        }
+
+        .card {
+            border: none;
+        }
+
+        .border-left-primary {
+            border-left: .25rem solid #4e73df !important;
+        }
+
+        .border-left-success {
+            border-left: .25rem solid #1cc88a !important;
+        }
+
+        .border-left-info {
+            border-left: .25rem solid #36b9cc !important;
+        }
+
+        .border-left-warning {
+            border-left: .25rem solid #f6c23e !important;
+        }
+
+        .border-left-danger {
+            border-left: .25rem solid #e74a3b !important;
+        }
+
+        .text-xs {
+            font-size: .7rem;
+        }
+
+        .text-gray-300 {
+            color: #dddfeb !important;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
+
+        #serverReportsTable thead {
+            background-color: #f8f9fc;
+            color: #5a5c69;
+            border-bottom: 2px solid #e3e6f0;
+        }
+
+        #serverReportsTable th {
+            font-weight: 600;
+            border: none;
+        }
+
+        #serverReportsTable td {
+            vertical-align: middle;
+        }
+    </style>
 }

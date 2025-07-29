@@ -1,11 +1,16 @@
 ﻿@model BelbimEnv.Models.PortFilterViewModel
-
 @using BelbimEnv.Models
+@using BelbimEnv.Helpers
 
 @{
-    ViewData["Title"] = "Tüm Portların Listesi";
+    ViewData["Title"] = "Tüm Portların Paneli";
+
+    // Filtrelerin uygulanıp uygulanmadığını kontrol etmek için bir değişken
+    bool isFiltered = Model.SelectedLocations.Any() || Model.SelectedPortTypes.Any() ||
+                      Model.SelectedLinkStatuses.Any() || Model.SelectedSwNames.Any();
 }
 
+@* === TÜM MODAL PENCERELER (Değişiklik yok, aynı kalıyor) === *@
 <!-- EXCEL YÜKLEME MODALI -->
 <div class="modal fade" id="portExcelUploadModal" tabindex="-1" aria-labelledby="portExcelUploadModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -14,7 +19,7 @@
                 @Html.AntiForgeryToken()
                 <div class="modal-header"><h5 class="modal-title" id="portExcelUploadModalLabel"><i class="fas fa-file-excel text-success me-2"></i>Port Verilerini Excel ile Yükle</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
-                    <p class="text-muted small">Excel'deki 'Device Service Tag' sütunu, portların hangi sunucuya ait olduğunu belirlemek için kullanılır.</p>
+                    <p class="text-muted small">Excel'deki 'Device Service Tag' ve 'Türü' sütunları zorunludur.</p>
                     <div class="mb-3"><label for="file" class="form-label">Excel Dosyası (.xlsx):</label><input type="file" name="file" class="form-control" required accept=".xlsx" /></div>
                     <div class="mb-3">
                         <label class="form-label">Yükleme Yöntemi:</label>
@@ -27,19 +32,13 @@
         </div>
     </div>
 </div>
-
-
-
-<!-- YENİ DIŞARI AKTARMA MODAL PENCERESİ -->
+<!-- DIŞARI AKTARMA MODALI -->
 <div class="modal fade" id="exportPortsExcelModal" tabindex="-1" aria-labelledby="exportPortsExcelModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <form asp-controller="PortDetaylari" asp-action="ExportToExcel" method="post">
                 @Html.AntiForgeryToken()
-                <div class="modal-header">
-                    <h5 class="modal-title" id="exportPortsExcelModalLabel"><i class="fas fa-file-export text-warning me-2"></i>Portları Excel'e Aktar</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title" id="exportPortsExcelModalLabel"><i class="fas fa-file-export text-warning me-2"></i>Portları Excel'e Aktar</h5><button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button></div>
                 <div class="modal-body">
                     <p class="text-muted">Lütfen raporda yer almasını istediğiniz sütunları seçin.</p>
                     <div class="row">
@@ -49,161 +48,174 @@
                         }
                         @foreach (var prop in properties)
                         {
-                            <div class="col-6 form-check mx-3">
-                                <input class="form-check-input" type="checkbox" name="Columns[@colIndex].IsSelected" value="true" checked id="port_col_@prop.Name" />
-                                <input type="hidden" name="Columns[@colIndex].Name" value="@prop.Name" />
-                                <label class="form-check-label" for="port_col_@prop.Name">@prop.Name</label>
-                            </div>
+                            <div class="col-6 form-check mx-3"><input class="form-check-input" type="checkbox" name="Columns[@colIndex].IsSelected" value="true" checked id="port_col_@prop.Name" /><input type="hidden" name="Columns[@colIndex].Name" value="@prop.Name" /><label class="form-check-label" for="port_col_@prop.Name">@prop.Name</label></div>
                             colIndex++;
                         }
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-download me-1"></i> Aktar</button>
-                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" class="btn btn-primary"><i class="fas fa-download me-1"></i> Aktar</button></div>
             </form>
         </div>
     </div>
 </div>
+<!-- FİLTRELEME MODALI -->
 <div class="modal fade" id="filterModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <form asp-action="ListAll" method="get">
                 <div class="modal-header"><h5 class="modal-title"><i class="fas fa-filter me-2"></i>Gelişmiş Filtre</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body">
-                    <div class="row g-4">
-                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Lokasyon</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Ara..." data-target-list="#location-list"></div><div class="card-body filter-options" id="location-list">@foreach(var item in Model.AllLocations){
-                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedLocations" value="@item.Value" id="loc_@item.Value" @(Model.SelectedLocations.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="loc_@item.Value">@item.Text</label></div>
-                                                }
-</div></div></div>
-                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Port Tipi</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Ara..." data-target-list="#porttype-list"></div><div class="card-body filter-options" id="porttype-list">@foreach(var item in Model.AllPortTypes){
-                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedPortTypes" value="@item.Value" id="type_@item.Value" @(Model.SelectedPortTypes.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="type_@item.Value">@item.Text</label></div>
-                                                }
-</div></div></div>
-                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Link Durumu</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Ara..." data-target-list="#status-list"></div><div class="card-body filter-options" id="status-list">@foreach(var item in Model.AllLinkStatuses){
-                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedLinkStatuses" value="@item.Value" id="status_@item.Value" @(Model.SelectedLinkStatuses.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="status_@item.Value">@item.Text</label></div>
-                                                }
-</div></div></div>
-                        <div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Switch Adı</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Ara..." data-target-list="#swname-list"></div><div class="card-body filter-options" id="swname-list">@foreach(var item in Model.AllSwNames){
-                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedSwNames" value="@item.Value" id="sw_@item.Value" @(Model.SelectedSwNames.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="sw_@item.Value">@item.Text</label></div>
-                                                }
-</div></div></div>
-                    </div>
-                </div>
+                <div class="modal-body"><div class="row g-4"><div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Lokasyon</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Ara..." data-target-list="#location-list"></div><div class="card-body filter-options" id="location-list">@foreach(var item in Model.AllLocations){
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedLocations" value="@item.Value" id="loc_@item.Value" @(Model.SelectedLocations.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="loc_@item.Value">@item.Text</label></div>
+                                }
+</div></div></div><div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Port Tipi</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Ara..." data-target-list="#porttype-list"></div><div class="card-body filter-options" id="porttype-list">@foreach(var item in Model.AllPortTypes){
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedPortTypes" value="@item.Value" id="type_@item.Value" @(Model.SelectedPortTypes.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="type_@item.Value">@item.Text</label></div>
+                                }
+</div></div></div><div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Link Durumu</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Ara..." data-target-list="#status-list"></div><div class="card-body filter-options" id="status-list">@foreach(var item in Model.AllLinkStatuses){
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedLinkStatuses" value="@item.Value" id="status_@item.Value" @(Model.SelectedLinkStatuses.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="status_@item.Value">@item.Text</label></div>
+                                }
+</div></div></div><div class="col-md-3"><div class="card h-100"><div class="card-header fw-bold">Switch Adı</div><div class="p-2 border-bottom"><input type="text" class="form-control form-control-sm filter-search" placeholder="Ara..." data-target-list="#swname-list"></div><div class="card-body filter-options" id="swname-list">@foreach(var item in Model.AllSwNames){
+                <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedSwNames" value="@item.Value" id="sw_@item.Value" @(Model.SelectedSwNames.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="sw_@item.Value">@item.Text</label></div>
+                                }
+</div></div></div></div></div>
                 <div class="modal-footer"><a asp-action="ListAll" class="btn btn-secondary me-auto">Filtreyi Temizle</a><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button><button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> Filtrele</button></div>
             </form>
         </div>
     </div>
 </div>
 
+@* === YENİ VE MODERN SAYFA YAPISI === *@
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3><i class="fas fa-list-alt me-2"></i>@ViewData["Title"]</h3>
-    <div>
-        <div class="input-group d-inline-flex" style="width: 350px;">
-            <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" id="searchInput" class="form-control" placeholder="Ara...">
+<!-- 1. BÖLÜM: Sayfa Başlığı ve Genel Bakış Kartları -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+</div>
+
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-primary text-uppercase mb-1">Toplam Port Sayısı</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.Ports.Count()</div></div><div class="col-auto"><i class="fas fa-network-wired fa-2x text-gray-300"></i></div></div></div>
         </div>
-        <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="fas fa-filter me-1"></i> Filtrele</button>
-        <button type="button" class="btn btn-warning ms-2" data-bs-toggle="modal" data-bs-target="#exportPortsExcelModal">
-            <i class="fas fa-file-export me-1"></i> Dışarı Aktar
-        </button>
-
-        @if (User.IsInRole("SuperUser"))
-        {
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#portExcelUploadModal">
-                <i class="fas fa-file-excel me-1"></i> Excel ile Yükle
-            </button>
-        }
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-success text-uppercase mb-1">Aktif (Up) Portlar</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.Ports.Count(p => p.LinkStatus?.ToLower() == "up")</div></div><div class="col-auto"><i class="fas fa-power-off fa-2x text-gray-300"></i></div></div></div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-danger text-uppercase mb-1">Pasif (Down) Portlar</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.Ports.Count(p => p.LinkStatus?.ToLower() == "down")</div></div><div class="col-auto"><i class="fas fa-plug fa-2x text-gray-300"></i></div></div></div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-info text-uppercase mb-1">Farklı Port Tipi</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.AllPortTypes.Count()</div></div><div class="col-auto"><i class="fas fa-tags fa-2x text-gray-300"></i></div></div></div>
+        </div>
     </div>
 </div>
 
-<div class="card shadow-sm">
+<!-- 2. BÖLÜM: Filtre, Arama ve İşlem Butonları -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+        <h6 class="m-0 fw-bold text-primary"><i class="fas fa-search me-1"></i>Port Arama ve İşlemler</h6>
+    </div>
+    <div class="card-body">
+        <div class="d-flex flex-wrap gap-2 justify-content-between">
+            <div class="input-group" style="max-width: 400px;"><span class="input-group-text"><i class="fas fa-search"></i></span><input type="text" id="portSearchInput" class="form-control" placeholder="Tablo içinde hızlı ara..."></div>
+            <div class="btn-toolbar" role="toolbar">
+                <div class="btn-group me-2" role="group">
+                    <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="fas fa-filter me-1"></i> Gelişmiş Filtre</button>
+                    @if (isFiltered)
+                    {
+                        <a asp-action="ListAll" class="btn btn-danger" title="Filtreyi Temizle"><i class="fas fa-times"></i></a>
+                    }
+                    <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exportPortsExcelModal"><i class="fas fa-file-export me-1"></i> Dışarı Aktar</button>
+                </div>
+                @if (User.IsInRole("SuperUser"))
+                {
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#portExcelUploadModal"><i class="fas fa-file-excel me-1"></i> Excel Yükle</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. BÖLÜM: Port Listesi Tablosu -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">Port Listesi (@Model.Ports.Count() sonuç)</h6></div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-striped table-bordered table-hover">
-                <thead class="table-light">
+            <table class="table table-hover" id="portTable">
+                <thead>
                     <tr>
                         <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["ServerSortParm"]">Ait Olduğu Sunucu <i class="fas fa-sort"></i></a></th>
-                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["LocationSortParm"]">Lokasyon <i class="fas fa-sort"></i></a></th>
-                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["ModelSortParm"]">Model <i class="fas fa-sort"></i></a></th>
-                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["ServiceTagSortParm"]">Service Tag <i class="fas fa-sort"></i></a></th>
                         <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["PortTypeSortParm"]">Port Tipi <i class="fas fa-sort"></i></a></th>
                         <th>MAC / WWPN</th>
                         <th>Açıklama</th>
                         <th>Link Durumu</th>
-                        <th class="text-center">İşlemler</th>
+                        <th class="text-end">İşlemler</th>
                     </tr>
                 </thead>
                 <tbody id="portTableBody">
                     @if (!Model.Ports.Any())
                     {
-                        <tr><td colspan="9" class="text-center text-muted">Gösterilecek port kaydı bulunamadı.</td></tr>
+                        <tr><td colspan="6"><div class="text-center p-4"><i class="fas fa-info-circle fa-3x text-warning mb-3"></i><h5 class="text-muted">Sonuç Bulunamadı</h5><p>Mevcut kriterlere uygun port kaydı bulunmuyor.<br><a asp-action="ListAll">Filtreleri temizleyerek</a> yeniden deneyebilirsiniz.</p></div></td></tr>
                     }
-                    @foreach (var port in Model.Ports)
+                    else
                     {
-                        <tr>
-                            <td><a asp-controller="Servers" asp-action="Details" asp-route-id="@port.ServerId">@port.Server.HostDns</a></td>
-                            <td>@port.Server.Location</td>
-                            <td>@port.Server.Model</td>
-                            <td>@port.Server.ServiceTag</td>
-                            <td><span class="badge bg-secondary">@port.PortTipi.GetDisplayName()</span></td>
-                            <td>
-                                @if (port.PortTipi == PortTipiEnum.FC || port.PortTipi == PortTipiEnum.VirtualFC)
-                                {
-                                    <strong>Fiber MAC:</strong> 
-                                    @port.FiberMAC
-                                    ;
-                                }
-                                else if (port.PortTipi == PortTipiEnum.Bakir || port.PortTipi == PortTipiEnum.VirtualBakir)
-                                {
+                        @foreach (var port in Model.Ports)
+                        {
+                            <tr>
+                                <td><strong><a asp-controller="Servers" asp-action="Details" asp-route-id="@port.ServerId">@port.Server.HostDns</a></strong><small class="d-block text-muted">@port.Server.Location</small></td>
+                                <td><span class="badge bg-info text-dark">@port.PortTipi.GetDisplayName()</span></td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(port.FiberMAC))
+                                    {
+                                        <span>@port.FiberMAC</span>
+                                    }
+                                    else if (!string.IsNullOrEmpty(port.BakirMAC))
+                                    {
 
-                                    <strong>Bakır MAC:</strong> 
-                                    @port.BakirMAC
-                                    ;
-                                }
-                                else if (port.PortTipi == PortTipiEnum.FiberForSAN)
-                                {
+                                        <span>@port.BakirMAC</span>
+                                    }
+                                    else if (!string.IsNullOrEmpty(port.Wwpn))
+                                    {
 
-                                    <strong>WWPN:</strong> 
-                                    @port.Wwpn
-                                    ;
-                                }
-                            </td>
-                            <td>@port.Aciklama</td>
-                            <td>
-                                @if (port.LinkStatus?.ToLower() == "up")
-                                {
-                                    <span class="badge bg-success">Up</span>
-                                    ;
-                                }
-                                else if (port.LinkStatus?.ToLower() == "down")
-                                {
+                                        <span>@port.Wwpn</span>
+                                    }
+                                </td>
+                                <td>@port.Aciklama</td>
+                                <td>
+                                    @if (port.LinkStatus?.ToLower() == "up")
+                                    {
+                                        <span class="badge bg-success">Up</span>
+                                    }
+                                    else if (port.LinkStatus?.ToLower() == "down")
+                                    {
 
-                                    <span class="badge bg-danger">Down</span>
-                                    ;
-                                }
-                                else
-                                {
+                                        <span class="badge bg-danger">Down</span>
+                                    }
+                                    else
+                                    {
 
-                                    <span class="badge bg-secondary">@port.LinkStatus</span>
-                                    ;
-                                }
-                            </td>
-                            <td class="text-center text-nowrap">
-                                <a asp-controller="PortDetaylari" asp-action="Details" asp-route-id="@port.Id" class="btn btn-sm btn-outline-info" title="Port Detayları"><i class="fas fa-info-circle"></i></a>
-                                @if (User.IsInRole("SuperUser"))
-                                {
-                                    <a asp-controller="PortDetaylari" asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
-                                    <form asp-controller="PortDetaylari" asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');"><button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button></form>
-                                }
-                            </td>
-                        </tr>
+                                        <span class="badge bg-secondary">@port.LinkStatus</span>
+                                    }
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <a asp-action="Details" asp-route-id="@port.Id" class="btn btn-sm btn-outline-info" title="Port Detayları"><i class="fas fa-info-circle"></i></a>
+                                    @if (User.IsInRole("SuperUser"))
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@port.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
+                                        <form asp-action="Delete" asp-route-id="@port.Id" method="post" class="d-inline" onsubmit="return confirm('Bu portu silmek istediğinizden emin misiniz?');"><button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button></form>
+                                    }
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
-            <p id="noResultsMessage" class="text-center text-muted" style="display: none;">Arama kriterlerinize uygun sonuç bulunamadı.</p>
+            <p id="noResultsMessage" class="text-center text-muted" style="display: none;">Arama kriterlerinize uygun port bulunamadı.</p>
         </div>
     </div>
 </div>
@@ -211,41 +223,107 @@
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const searchInput = document.getElementById('searchInput');
+            // HIZLI ARAMA SCRİPT'İ
+            const searchInput = document.getElementById('portSearchInput');
             const tableBody = document.getElementById('portTableBody');
-            const rows = tableBody.getElementsByTagName('tr');
-            const noResultsMessage = document.getElementById('noResultsMessage');
-            searchInput.addEventListener('keyup', function() {
-                const filterText = searchInput.value.toLowerCase();
-                let visibleRowCount = 0;
-                for (let i = 0; i < rows.length; i++) {
-                    const rowText = rows[i].textContent.toLowerCase();
-                    if (rowText.includes(filterText)) {
-                        rows[i].style.display = "";
-                        visibleRowCount++;
-                    } else {
-                        rows[i].style.display = "none";
+            if(tableBody) {
+                const rows = tableBody.getElementsByTagName('tr');
+                const noResultsMessage = document.getElementById('noResultsMessage');
+                const table = document.getElementById('portTable');
+                searchInput.addEventListener('keyup', function() {
+                    const filterText = searchInput.value.toLowerCase();
+                    let visibleRowCount = 0;
+                    if(rows.length === 1 && rows[0].getElementsByTagName('td').length === 1) { return; }
+                    for (let i = 0; i < rows.length; i++) {
+                        const rowText = rows[i].textContent.toLowerCase();
+                        if (rowText.includes(filterText)) {
+                            rows[i].style.display = ""; visibleRowCount++;
+                        } else {
+                            rows[i].style.display = "none";
+                        }
                     }
-                }
-                noResultsMessage.style.display = (visibleRowCount === 0) ? "block" : "none";
-            });
+                    if (noResultsMessage) {
+                        table.style.display = (visibleRowCount === 0) ? "none" : "";
+                        noResultsMessage.style.display = (visibleRowCount === 0) ? "block" : "none";
+                    }
+                });
+            }
         });
     </script>
 }
 
 @section Styles {
     <style>
+        /* === MODERN TEMA STİLLERİ (Diğer sayfalardan kopyalandı) === */
+        body {
+            background-color: #f8f9fc;
+        }
+
+        .card {
+            border: none;
+        }
+
+        .border-left-primary {
+            border-left: .25rem solid #4e73df !important;
+        }
+
+        .border-left-success {
+            border-left: .25rem solid #1cc88a !important;
+        }
+
+        .border-left-info {
+            border-left: .25rem solid #36b9cc !important;
+        }
+
+        .border-left-danger {
+            border-left: .25rem solid #e74a3b !important;
+        }
+
+        .text-xs {
+            font-size: .7rem;
+        }
+
+        .text-gray-300 {
+            color: #dddfeb !important;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
+
+        /* Tablo Stilleri */
+        #portTable thead {
+            background-color: #f8f9fc;
+            color: #5a5c69;
+            border-bottom: 2px solid #e3e6f0;
+        }
+
+        #portTable th {
+            font-weight: 600;
+            border: none;
+        }
+
+        #portTable td {
+            vertical-align: middle;
+        }
+
         .sort-link {
             color: inherit;
             text-decoration: none;
-            display: block;
-            width: 100%;
-            height: 100%;
         }
 
             .sort-link:hover {
-                color: #0d6efd;
-                text-decoration: none;
+                color: #4e73df;
+            }
+
+        /* Filtreleme modalı içindeki listeler */
+        .filter-options {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+            .filter-options .form-check {
+                margin-bottom: 0.5rem;
             }
     </style>
 }

@@ -4,8 +4,13 @@
     ViewData["Title"] = "Sanal Makine Paneli";
     var serverHostMap = ViewData["ServerHostMap"] as Dictionary<string, int> ?? new Dictionary<string, int>();
     string previousVipIp = null;
+
+    // Filtrelerin uygulanıp uygulanmadığını kontrol et
+    bool isFiltered = Model.SelectedStatuses.Any() || Model.SelectedNetworks.Any() || Model.SelectedHosts.Any() ||
+                      Model.SelectedClusters.Any() || Model.SelectedPools.Any();
 }
 
+@* === TÜM MODAL PENCERELER (Değişiklik yok, aynı kalıyor) === *@
 <!-- EXCEL YÜKLEME MODALI -->
 <div class="modal fade" id="excelUploadModal" tabindex="-1">
     <div class="modal-dialog">
@@ -26,242 +31,174 @@
         </div>
     </div>
 </div>
-
 <!-- FİLTRELEME MODALI -->
 <div class="modal fade" id="filterModal" tabindex="-1">
     <div class="modal-dialog modal-xl">
-        <!-- Daha geniş bir modal için modal-xl -->
         <div class="modal-content">
             <form asp-action="Index" method="get">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-filter me-2"></i>Gelişmiş Filtre</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title"><i class="fas fa-filter me-2"></i>Gelişmiş Filtre</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="row g-4">
-                        <!-- Durum Filtresi -->
-                        <div class="col-md-6 col-lg-3">
-                            <div class="card h-100">
-                                <div class="card-header fw-bold">Durum</div>
-                                <div class="card-body filter-options">
-                                    @foreach (var item in Model.AllStatuses)
-                                    {
-                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedStatuses" value="@item.Value" id="status_@item.Value" @(Model.SelectedStatuses.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="status_@item.Value">@item.Text</label></div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Network Filtresi -->
-                        <div class="col-md-6 col-lg-3">
-                            <div class="card h-100">
-                                <div class="card-header fw-bold">Network</div>
-                                <div class="card-body filter-options">
-                                    @foreach (var item in Model.AllNetworks)
-                                    {
-                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedNetworks" value="@item.Value" id="net_@item.Value" @(Model.SelectedNetworks.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="net_@item.Value">@item.Text</label></div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Host Filtresi -->
-                        <div class="col-md-6 col-lg-3">
-                            <div class="card h-100">
-                                <div class="card-header fw-bold">Host</div>
-                                <div class="card-body filter-options">
-                                    @foreach (var item in Model.AllHosts)
-                                    {
-                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedHosts" value="@item.Value" id="host_@item.Value" @(Model.SelectedHosts.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="host_@item.Value">@item.Text</label></div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Cluster Filtresi -->
-                        <div class="col-md-6 col-lg-3">
-                            <div class="card h-100">
-                                <div class="card-header fw-bold">Cluster</div>
-                                <div class="card-body filter-options">
-                                    @foreach (var item in Model.AllClusters)
-                                    {
-                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedClusters" value="@item.Value" id="clus_@item.Value" @(Model.SelectedClusters.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="clus_@item.Value">@item.Text</label></div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Pool Filtresi -->
-                        <div class="col-md-6 col-lg-3">
-                            <div class="card h-100">
-                                <div class="card-header fw-bold">Pool</div>
-                                <div class="card-body filter-options">
-                                    @foreach (var item in Model.AllPools)
-                                    {
-                                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedPools" value="@item.Value" id="pool_@item.Value" @(Model.SelectedPools.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="pool_@item.Value">@item.Text</label></div>
-                                    }
-                                </div>
-                            </div>
-                        </div>
+                        <div class="col-md-6 col-lg-3"><div class="card h-100"><div class="card-header fw-bold">Durum</div><div class="card-body filter-options">@foreach(var item in Model.AllStatuses){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedStatuses" value="@item.Value" id="status_@item.Value" @(Model.SelectedStatuses.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="status_@item.Value">@item.Text</label></div>
+                                                }
+</div></div></div>
+                        <div class="col-md-6 col-lg-3"><div class="card h-100"><div class="card-header fw-bold">Network</div><div class="card-body filter-options">@foreach(var item in Model.AllNetworks){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedNetworks" value="@item.Value" id="net_@item.Value" @(Model.SelectedNetworks.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="net_@item.Value">@item.Text</label></div>
+                                                }
+</div></div></div>
+                        <div class="col-md-6 col-lg-3"><div class="card h-100"><div class="card-header fw-bold">Host</div><div class="card-body filter-options">@foreach(var item in Model.AllHosts){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedHosts" value="@item.Value" id="host_@item.Value" @(Model.SelectedHosts.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="host_@item.Value">@item.Text</label></div>
+                                                }
+</div></div></div>
+                        <div class="col-md-6 col-lg-3"><div class="card h-100"><div class="card-header fw-bold">Cluster</div><div class="card-body filter-options">@foreach(var item in Model.AllClusters){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedClusters" value="@item.Value" id="clus_@item.Value" @(Model.SelectedClusters.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="clus_@item.Value">@item.Text</label></div>
+                                                }
+</div></div></div>
+                        <div class="col-md-6 col-lg-3"><div class="card h-100"><div class="card-header fw-bold">Pool</div><div class="card-body filter-options">@foreach(var item in Model.AllPools){
+                        <div class="form-check"><input class="form-check-input" type="checkbox" name="SelectedPools" value="@item.Value" id="pool_@item.Value" @(Model.SelectedPools.Contains(item.Value) ? "checked" : "")><label class="form-check-label" for="pool_@item.Value">@item.Text</label></div>
+                                                }
+</div></div></div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <a asp-action="Index" class="btn btn-secondary me-auto">Filtreyi Temizle</a>
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> Filtrele</button>
-                </div>
+                <div class="modal-footer"><a asp-action="Index" class="btn btn-secondary me-auto">Filtreyi Temizle</a><button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Kapat</button><button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i> Filtrele</button></div>
             </form>
         </div>
     </div>
 </div>
-
-<!-- YENİ DIŞARI AKTARMA MODAL PENCERESİ -->
+<!-- DIŞARI AKTARMA MODALI -->
 <div class="modal fade" id="exportVmExcelModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <form asp-controller="VirtualMachines" asp-action="ExportToExcel" method="post">
                 @Html.AntiForgeryToken()
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-file-export text-warning me-2"></i>Sanal Makineleri Excel'e Aktar</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
+                <div class="modal-header"><h5 class="modal-title"><i class="fas fa-file-export text-warning me-2"></i>Sanal Makineleri Excel'e Aktar</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <p class="text-muted">Lütfen raporda yer almasını istediğiniz sütunları seçin.</p>
                     <div class="row">
                         @{
-                            var properties = typeof(VirtualMachine).GetProperties().Where(p => p.Name != "Id");
-                            int colIndex = 0;
+                            var properties = typeof(VirtualMachine).GetProperties().Where(p => p.Name != "Id"); int colIndex = 0;
                         }
                         @foreach (var prop in properties)
                         {
-                            <div class="col-6 form-check mx-3">
-                                <input class="form-check-input" type="checkbox" name="Columns[@colIndex].IsSelected" value="true" checked id="vm_col_@prop.Name" />
-                                <input type="hidden" name="Columns[@colIndex].Name" value="@prop.Name" />
-                                <label class="form-check-label" for="vm_col_@prop.Name">@prop.Name</label>
-                            </div>
+                            <div class="col-6 form-check mx-3"><input class="form-check-input" type="checkbox" name="Columns[@colIndex].IsSelected" value="true" checked id="vm_col_@prop.Name" /><input type="hidden" name="Columns[@colIndex].Name" value="@prop.Name" /><label class="form-check-label" for="vm_col_@prop.Name">@prop.Name</label></div>
                             colIndex++;
                         }
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button>
-                    <button type="submit" class="btn btn-primary"><i class="fas fa-download me-1"></i> Aktar</button>
-                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">İptal</button><button type="submit" class="btn btn-primary"><i class="fas fa-download me-1"></i> Aktar</button></div>
             </form>
         </div>
     </div>
 </div>
-<!-- Sayfa Başlığı, Arama ve Butonlar -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3 class="text-primary"><i class="fas fa-desktop me-2"></i>@ViewData["Title"]</h3>
-    <div>
-        <div class="input-group d-inline-flex" style="width: 350px;">
-            <span class="input-group-text"><i class="fas fa-search"></i></span>
-            <input type="text" id="vmSearchInput" class="form-control" placeholder="Mevcut sonuçlarda ara...">
-        </div>
-        <button type="button" class="btn btn-info ms-2" data-bs-toggle="modal" data-bs-target="#filterModal">
-            <i class="fas fa-filter me-1"></i> Filtrele
-        </button>
-        <!-- YENİ DIŞARI AKTAR BUTONU -->
-        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exportVmExcelModal">
-            <i class="fas fa-file-export me-1"></i> Dışarı Aktar
-        </button>
-        @if (User.IsInRole("SuperUser"))
-        {
-            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#excelUploadModal"><i class="fas fa-file-excel me-1"></i> Excel ile Yükle</button>
-            <a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Yeni VM Ekle</a>
-        }
-    </div>
+
+@* === MODERN SAYFA YAPISI === *@
+
+<!-- 1. BÖLÜM: Sayfa Başlığı ve Genel Bakış Kartları -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+</div>
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-primary shadow h-100 py-2"><div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-primary text-uppercase mb-1">Toplam Sanal Makine</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.VirtualMachines.Count()</div></div><div class="col-auto"><i class="fas fa-desktop fa-2x text-gray-300"></i></div></div></div></div></div>
+    <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-success shadow h-100 py-2"><div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-success text-uppercase mb-1">Aktif Makineler</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.VirtualMachines.Count(vm => vm.Status != null && vm.Status.ToLower() == "poweredon")</div></div><div class="col-auto"><i class="fas fa-power-off fa-2x text-gray-300"></i></div></div></div></div></div>
+    <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-danger shadow h-100 py-2"><div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-danger text-uppercase mb-1">Kapalı Makineler</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.VirtualMachines.Count(vm => vm.Status != null && vm.Status.ToLower() == "poweredoff")</div></div><div class="col-auto"><i class="fas fa-plug fa-2x text-gray-300"></i></div></div></div></div></div>
+    <div class="col-xl-3 col-md-6 mb-4"><div class="card border-left-info shadow h-100 py-2"><div class="card-body"><div class="row g-0 align-items-center"><div class="col"><div class="text-xs fw-bold text-info text-uppercase mb-1">Toplam Fiziksel Host</div><div class="h5 mb-0 fw-bold text-gray-800">@Model.AllHosts.Count()</div></div><div class="col-auto"><i class="fas fa-server fa-2x text-gray-300"></i></div></div></div></div></div>
 </div>
 
-<div class="card shadow-sm">
+<!-- 2. BÖLÜM: Filtre, Arama ve İşlem Butonları -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between"><h6 class="m-0 fw-bold text-primary"><i class="fas fa-search me-1"></i>VM Arama ve İşlemler</h6></div>
+    <div class="card-body"><div class="d-flex flex-wrap gap-2 justify-content-between"><div class="input-group" style="max-width: 400px;"><span class="input-group-text"><i class="fas fa-search"></i></span><input type="text" id="vmSearchInput" class="form-control" placeholder="Tablo içinde hızlı ara..."></div><div class="btn-toolbar" role="toolbar"><div class="btn-group me-2" role="group"><button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#filterModal"><i class="fas fa-filter me-1"></i> Gelişmiş Filtre</button>@if(isFiltered){
+    <a asp-action="Index" class="btn btn-danger" title="Filtreyi Temizle"><i class="fas fa-times"></i></a>
+        }
+<button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#exportVmExcelModal"><i class="fas fa-file-export me-1"></i> Dışarı Aktar</button></div>@if (User.IsInRole("SuperUser")){
+    <div class="btn-group" role="group"><button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#excelUploadModal"><i class="fas fa-file-excel me-1"></i> Excel Yükle</button><a asp-action="Create" class="btn btn-primary"><i class="fas fa-plus me-1"></i> Yeni VM Ekle</a></div>
+        }
+</div></div></div>
+</div>
+
+<!-- 3. BÖLÜM: Sanal Makine Listesi Tablosu -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">Sanal Makine Listesi (@Model.VirtualMachines.Count() sonuç)</h6></div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover table-bordered table-sm grouped-table">
-                <thead class="table-dark">
-                    <tr>
-                        <th>DNS</th>
-                        <th>Durumu</th>
-                        <th>VIP IP</th>
-                        <th>Makine IP</th>
-                        <th>Network</th>
-                        <th>Host</th>
-                        <th>Makine Adı</th>
-                        <th>Cluster</th>
-                        <th class="text-end">İşlemler</th>
-                    </tr>
-                </thead>
+            <table class="table table-hover grouped-table" id="vmTable">
+                <thead><tr><th>DNS</th><th>Durumu</th><th>VIP IP</th><th>Makine IP</th><th>Network</th><th>Host</th><th>Cluster</th><th class="text-end">İşlemler</th></tr></thead>
                 <tbody id="vmTableBody">
-                    @foreach (var item in Model.VirtualMachines)
+                    @if (!Model.VirtualMachines.Any())
                     {
-                        bool isFirstInGroup = previousVipIp != item.VipIp && !string.IsNullOrEmpty(item.VipIp);
-                        bool isInGroup = !string.IsNullOrEmpty(item.VipIp);
-                        previousVipIp = item.VipIp;
+                        <tr><td colspan="8"><div class="text-center p-4"><i class="fas fa-info-circle fa-3x text-warning mb-3"></i><h5 class="text-muted">Sonuç Bulunamadı</h5><p>Mevcut kriterlere uygun sanal makine kaydı bulunmuyor. <br /><a asp-action="Index">Filtreleri temizleyerek</a> yeniden deneyebilirsiniz.</p></div></td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in Model.VirtualMachines)
+                        {
+                            bool isFirstInGroup = previousVipIp != item.VipIp && !string.IsNullOrEmpty(item.VipIp);
+                            previousVipIp = item.VipIp;
+                            <tr class="@(isFirstInGroup ? "group-start" : "")">
+                                <td>
+                                    @if (!isFirstInGroup && !string.IsNullOrEmpty(item.VipIp))
+                                    {
+                                        <span class="sub-row-indicator"></span>
+                                    }
+                                    <strong>@item.Dns</strong><small class="d-block text-muted">@item.VmName</small>
+                                </td>
+                                <td>
+                                    @if (item.Status?.ToLower() == "poweredon")
+                                    {
+                                        <span class="badge bg-success">Açık</span>
+                                    }
+                                    else if (item.Status?.ToLower() == "poweredoff")
+                                    {
 
-                        <tr class="@(isFirstInGroup ? "group-start" : "")">
-                            <td>
-                                @if (!isFirstInGroup && isInGroup)
-                                {
-                                    <span class="sub-row-indicator"></span>
-                                }
-                                @item.Dns
-                            </td>
-                            <td>
-                                @if (item.Status?.ToLower() == "poweredon")
-                                {
-                                    <span class="badge bg-success">Açık</span>
-                                    ;
-                                }
-                                else if (item.Status?.ToLower() == "poweredoff")
-                                {
+                                        <span class="badge bg-danger">Kapalı</span>
+                                    }
+                                    else
+                                    {
 
-                                    <span class="badge bg-danger">Kapalı</span>
-                                    ;
-                                }
-                                else
-                                {
+                                        <span class="badge bg-secondary">@item.Status</span>
+                                    }
+                                </td>
 
-                                    <span class="badge bg-secondary">@item.Status</span>
-                                    ;
-                                }
-                            </td>
-                            <td>
-                                @if (isFirstInGroup)
-                                {
-                                    <strong class="text-primary">@item.VipIp</strong>
-                                    ;
-                                }
-                                else
-                                {
+                                <!-- ======================================================= -->
+                                <!-- === DEĞİŞTİRİLEN BÖLÜM: VIP IP HER SATIRDA GÖRÜNECEK === -->
+                                <!-- ======================================================= -->
+                                <td>
+                                    @if (isFirstInGroup)
+                                    {
+                                        <strong class="text-primary">@item.VipIp</strong>
+                                    }
+                                    else
+                                    {
+                                        @item.VipIp
+                                    }
+                                </td>
+                                <!-- ======================================================= -->
 
-                                    @item.VipIp
-                                    ;
-                                }
-                            </td>
-                            <td>@item.MachineIp</td>
-                            <td>@item.Network</td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(item.Host) && serverHostMap.ContainsKey(item.Host))
-                                {
-                                    <a asp-controller="Servers" asp-action="Details" asp-route-id="@serverHostMap[item.Host]">@item.Host</a>
-                                    ;
-                                }
-                                else
-                                {
+                                <td>@item.MachineIp</td>
+                                <td>@item.Network</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.Host) && serverHostMap.ContainsKey(item.Host))
+                                    {
+                                        <a asp-controller="Servers" asp-action="Details" asp-route-id="@serverHostMap[item.Host]"><i class="fas fa-server me-1"></i>@item.Host</a>
+                                    }
+                                    else
+                                    {
 
-                                    @item.Host
-                                    ;
-                                }
-                            </td>
-                            <td>@item.MachineName</td>
-                            <td>@item.Cluster</td>
-                            <td class="text-end text-nowrap">
-                                <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Detaylar"><i class="fas fa-info-circle"></i></a>
-                                @if (User.IsInRole("SuperUser"))
-                                {
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
-                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu kaydı silmek istediğinizden emin misiniz?');">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button>
-                                    </form>
-                                }
-                            </td>
-                        </tr>
+                                        @item.Host
+                                    }
+                                </td>
+                                <td>@item.Cluster</td>
+                                <td class="text-end text-nowrap">
+                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Detaylar"><i class="fas fa-info-circle"></i></a>
+                                    @if (User.IsInRole("SuperUser"))
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu kaydı silmek istediğinizden emin misiniz?');"><button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button></form>
+                                    }
+                                </td>
+                            </tr>
+                        }
                     }
                 </tbody>
             </table>
@@ -275,28 +212,95 @@
         document.addEventListener("DOMContentLoaded", function() {
             const searchInput = document.getElementById('vmSearchInput');
             const tableBody = document.getElementById('vmTableBody');
-            const rows = tableBody.getElementsByTagName('tr');
-            const noResultsMessage = document.getElementById('noResultsMessage');
-            searchInput.addEventListener('keyup', function() {
-                const filterText = searchInput.value.toLowerCase();
-                let visibleRowCount = 0;
-                for (let i = 0; i < rows.length; i++) {
-                    const rowText = rows[i].textContent.toLowerCase();
-                    if (rowText.includes(filterText)) {
-                        rows[i].style.display = "";
-                        visibleRowCount++;
-                    } else {
-                        rows[i].style.display = "none";
+            if(tableBody) {
+                const rows = tableBody.getElementsByTagName('tr');
+                const noResultsMessage = document.getElementById('noResultsMessage');
+                const table = document.getElementById('vmTable');
+                searchInput.addEventListener('keyup', function() {
+                    const filterText = this.value.toLowerCase();
+                    let visibleRowCount = 0;
+                    if(rows.length === 1 && rows[0].getElementsByTagName('td').length === 1) { return; }
+                    for (let i = 0; i < rows.length; i++) {
+                        const rowText = rows[i].textContent.toLowerCase();
+                        if (rowText.includes(filterText)) {
+                            rows[i].style.display = ""; visibleRowCount++;
+                        } else {
+                            rows[i].style.display = "none";
+                        }
                     }
-                }
-                noResultsMessage.style.display = (visibleRowCount === 0) ? "block" : "none";
-            });
+                    if (noResultsMessage) {
+                        table.style.display = (visibleRowCount === 0) ? "none" : "";
+                        noResultsMessage.style.display = (visibleRowCount === 0) ? "block" : "none";
+                    }
+                });
+            }
         });
     </script>
 }
 
 @section Styles {
     <style>
+        /* === MODERN TEMA STİLLERİ === */
+        body {
+            background-color: #f8f9fc;
+        }
+
+        .card {
+            border: none;
+        }
+
+        .border-left-primary {
+            border-left: .25rem solid #4e73df !important;
+        }
+
+        .border-left-success {
+            border-left: .25rem solid #1cc88a !important;
+        }
+
+        .border-left-info {
+            border-left: .25rem solid #36b9cc !important;
+        }
+
+        .border-left-danger {
+            border-left: .25rem solid #e74a3b !important;
+        }
+
+        .text-xs {
+            font-size: .7rem;
+        }
+
+        .text-gray-300 {
+            color: #dddfeb !important;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
+
+        #vmTable thead, .grouped-table thead {
+            background-color: #f8f9fc;
+            color: #5a5c69;
+            border-bottom: 2px solid #e3e6f0;
+        }
+
+        #vmTable th, .grouped-table th {
+            font-weight: 600;
+            border: none;
+        }
+
+        #vmTable td, .grouped-table td {
+            vertical-align: middle;
+        }
+
+        .sort-link {
+            color: inherit;
+            text-decoration: none;
+        }
+
+            .sort-link:hover {
+                color: #4e73df;
+            }
+        /* === ÖZGÜN STİLLER (Korundu) === */
         .grouped-table tbody tr.group-start > td {
             border-top: 2px solid #adb5bd !important;
         }
@@ -332,8 +336,9 @@
                 border-top: 1px solid #ccc;
                 transform: translateY(-50%);
             }
+
         .filter-options {
-            max-height: 250px; /* Liste çok uzarsa kaydırma çubuğu çıksın */
+            max-height: 250px;
             overflow-y: auto;
         }
 

@@ -1,5 +1,5 @@
 using BelbimEnv.Data;
-using Microsoft.AspNetCore.Authentication.Cookies; // Gerekli using eklendi
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -8,23 +8,32 @@ using Microsoft.Extensions.Hosting;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ==========================================================
+// ===         YENÝ EKLENEN KESTREL YAPILANDIRMASI        ===
+// ==========================================================
+// Sunucunun kabul edeceði maksimum request header boyutunu artýrýyoruz.
+// Varsayýlan 32768 byte (32 KB)'dýr. Biz bunu 65536 byte (64 KB) yapýyoruz.
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestHeadersTotalSize = 65536;
+});
+// ==========================================================
+
+
 // DbContext'i ve veritabaný baðlantýsýný servislere ekle
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// ==========================================================
-// === YENÝ MANUEL AUTHENTICATION SÝSTEMÝ ===
-// ==========================================================
+// Manuel Authentication Sistemi
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.LoginPath = "/Account/Login"; // Giriþ yapýlmamýþsa yönlendirilecek sayfa
-        options.AccessDeniedPath = "/Account/AccessDenied"; // Yetkisi yoksa yönlendirilecek sayfa
-        options.ExpireTimeSpan = System.TimeSpan.FromMinutes(30); // Oturum süresi
-        options.SlidingExpiration = true; // Her istekte süreyi uzat
+        options.LoginPath = "/Account/Login";
+        options.AccessDeniedPath = "/Account/AccessDenied";
+        options.ExpireTimeSpan = System.TimeSpan.FromMinutes(30);
+        options.SlidingExpiration = true;
     });
-// ==========================================================
 
 builder.Services.AddControllersWithViews();
 
@@ -44,12 +53,11 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// YENÝDEN EKLENDÝ VE AKTÝF EDÝLDÝ
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}"); // Baþlangýç sayfasý artýk Login
+    pattern: "{controller=Account}/{action=Login}/{id?}");
 
 app.Run();

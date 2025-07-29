@@ -25,7 +25,52 @@ namespace BelbimEnv.Controllers
         {
             _context = context;
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ExportToExcel(ExportViewModel model)
+        {
+            var selectedColumns = model.Columns.Where(c => c.IsSelected).Select(c => c.Name).ToList();
+            if (!selectedColumns.Any())
+            {
+                TempData["ErrorMessage"] = "Lütfen dışarı aktarmak için en az bir sütun seçin.";
+                return RedirectToAction(nameof(Index));
+            }
 
+            var servers = await _context.Servers.AsNoTracking().ToListAsync();
+
+            using (var workbook = new ClosedXML.Excel.XLWorkbook())
+            {
+                var worksheet = workbook.Worksheets.Add("Sunucu_Listesi");
+                var currentRow = 1;
+
+                // Başlıkları oluştur
+                for (int i = 0; i < selectedColumns.Count; i++)
+                {
+                    worksheet.Cell(currentRow, i + 1).Value = selectedColumns[i];
+                }
+
+                // Verileri ekle
+                foreach (var server in servers)
+                {
+                    currentRow++;
+                    for (int i = 0; i < selectedColumns.Count; i++)
+                    {
+                        var propertyValue = typeof(Server).GetProperty(selectedColumns[i])?.GetValue(server, null);
+                        worksheet.Cell(currentRow, i + 1).Value = propertyValue?.ToString() ?? "";
+                    }
+                }
+
+                worksheet.Columns().AdjustToContents();
+
+                using (var stream = new MemoryStream())
+                {
+                    workbook.SaveAs(stream);
+                    var content = stream.ToArray();
+                    string excelName = $"Sunucu_Listesi_{DateTime.Now:yyyyMMddHHmmss}.xlsx";
+                    return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelName);
+                }
+            }
+        }
         public async Task<IActionResult> Index(ServerFilterViewModel filterModel, string sortOrder)
         {
             ViewData["CurrentSort"] = sortOrder;
