@@ -55,7 +55,7 @@ namespace BelbimEnv.Controllers
 
             System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
             var portsToImport = new List<PortDetay>();
-            var skippedRows = new List<string>(); // Atlanan satırların sebeplerini tutacak liste
+            var skippedRows = new List<string>();
 
             try
             {
@@ -67,14 +67,17 @@ namespace BelbimEnv.Controllers
                         var result = reader.AsDataSet(new ExcelDataSetConfiguration() { ConfigureDataTable = (_) => new ExcelDataTableConfiguration() { UseHeaderRow = true } });
                         DataTable dataTable = result.Tables[0];
 
-                        var allServers = await _context.Servers.ToListAsync();
-                        var serversDict = allServers.Where(s => !string.IsNullOrEmpty(s.ServiceTag)).GroupBy(s => s.ServiceTag.Trim(), StringComparer.OrdinalIgnoreCase).ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+                        var serversDict = (await _context.Servers.ToListAsync())
+                            .Where(s => !string.IsNullOrEmpty(s.ServiceTag))
+                            .GroupBy(s => s.ServiceTag.Trim(), StringComparer.OrdinalIgnoreCase)
+                            .ToDictionary(g => g.Key, g => g.First());
 
-                        int rowNumber = 1; // Excel'deki satır numarasını takip etmek için (başlık satırından sonra)
+                        int rowNumber = 1;
                         foreach (DataRow row in dataTable.Rows)
                         {
-                            rowNumber++; // Her döngüde satır numarasını artır
+                            rowNumber++;
 
+                            // Sütun başlığınız "Device Service Ta..." olarak görünüyor, bu yüzden Contains ile kontrol edelim.
                             string serviceTag = row.Table.Columns.Contains("Device Service Tag") ? row["Device Service Tag"]?.ToString()?.Trim() : null;
                             if (string.IsNullOrEmpty(serviceTag))
                             {
@@ -84,26 +87,45 @@ namespace BelbimEnv.Controllers
 
                             if (serversDict.TryGetValue(serviceTag, out Server server))
                             {
-                                PortTipiEnum portTipi = default;
-                                string turuStr = row.Table.Columns.Contains("Türü") ? row["Türü"]?.ToString() : "";
-                                if (!string.IsNullOrEmpty(turuStr))
-                                {
-                                    Enum.TryParse<PortTipiEnum>(turuStr.Replace(" ", ""), true, out portTipi);
-                                }
-
+                                string turuStr = row.Table.Columns.Contains("Türü") ? row["Türü"]?.ToString()?.Trim() : "";
+                                Enum.TryParse<PortTipiEnum>(turuStr.Replace(" ", ""), true, out PortTipiEnum portTipi);
                                 if (portTipi == default(PortTipiEnum))
                                 {
                                     skippedRows.Add($"Satır {rowNumber}: Geçersiz veya boş 'Türü' değeri ('{turuStr}') için atlandı.");
                                     continue;
                                 }
 
-                                var port = new PortDetay { /* ... alan atamaları ... */ };
+                                // === DOĞRU SÜTUN BAŞLIKLARI İLE GÜNCELLENMİŞ ATAMA BLOĞU ===
+                                var port = new PortDetay
+                                {
+                                    ServerId = server.Id,
+                                    PortTipi = portTipi,
+                                    LinkStatus = row.Table.Columns.Contains("Link Status") ? row["Link Status"]?.ToString()?.Trim() : null,
+                                    LinkSpeed = row.Table.Columns.Contains("Link Speed") ? row["Link Speed"]?.ToString()?.Trim() : null, // Görselde "Link Spe..." olarak görünüyor, tam adını kontrol edin.
+                                    PortId = row.Table.Columns.Contains("Port ID") ? row["Port ID"]?.ToString()?.Trim() : null,
+                                    NicId = row.Table.Columns.Contains("NIC ID") ? row["NIC ID"]?.ToString()?.Trim() : null,
+                                    FiberMAC = row.Table.Columns.Contains("Fiber MAC") ? row["Fiber MAC"]?.ToString()?.Trim() : null,
+                                    BakirMAC = row.Table.Columns.Contains("Bakır MAC") ? row["Bakır MAC"]?.ToString()?.Trim() : null,
+                                    Wwpn = row.Table.Columns.Contains("WWPN") ? row["WWPN"]?.ToString()?.Trim() : null,
+                                    SwName = row.Table.Columns.Contains("SW NAME") ? row["SW NAME"]?.ToString()?.Trim() : null, // Görselde "SW N..." olarak görünüyor.
+                                    SwPort = row.Table.Columns.Contains("SW PORT") ? row["SW PORT"]?.ToString()?.Trim() : null, // Görselde "SW PO..." olarak görünüyor.
+                                    SwdeUcMi = row.Table.Columns.Contains("Swde Uc Mi?") ? row["Swde Uc Mi?"]?.ToString()?.Trim() : null,
+                                    UcPort = row.Table.Columns.Contains("Uc Port") ? row["Uc Port"]?.ToString()?.Trim() : null,
+                                    BakirUplinkPort = row.Table.Columns.Contains("BakırUpPo...") ? row["BakırUpPo..."]?.ToString()?.Trim() : null // Excel'deki tam başlığı buraya yazın
+                                };
+
+                                if (row.Table.Columns.Contains("FC_Up Port Sayısı") && int.TryParse(row["FC_Up Port Sayısı"]?.ToString(), out int fcUcPortSayisi))
+                                {
+                                    port.FcUcPortSayisi = fcUcPortSayisi;
+                                }
+                                // ==========================================
+
                                 port.Aciklama = GeneratePortDescription(port, server);
                                 portsToImport.Add(port);
                             }
                             else
                             {
-                                skippedRows.Add($"Satır {rowNumber}: '{serviceTag}' Service Tag'ine sahip sunucu bulunamadığı için atlandı.");
+                                skippedRows.Add($"Satır {rowNumber}: '{serviceTag}' Service Tag'ine sahip bir sunucu bulunamadığı için atlandı.");
                             }
                         }
                     }
@@ -111,37 +133,31 @@ namespace BelbimEnv.Controllers
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Excel dosyası okunurken hata: {ex.Message}.";
+                TempData["ErrorMessage"] = $"Excel dosyası okunurken beklenmedik bir hata oluştu: {ex.Message}. Lütfen dosya formatını ve sütun başlıklarını kontrol edin.";
                 return RedirectToAction(nameof(ListAll));
             }
 
             try
             {
                 if (importOption == "replace") { _context.PortDetaylari.RemoveRange(_context.PortDetaylari); }
-                if (portsToImport.Any())
-                {
-                    await _context.PortDetaylari.AddRangeAsync(portsToImport);
-                    await _context.SaveChangesAsync();
-                }
+                if (portsToImport.Any()) { await _context.PortDetaylari.AddRangeAsync(portsToImport); }
+                await _context.SaveChangesAsync();
 
-                // Detaylı mesaj oluşturma
                 var messageBuilder = new StringBuilder();
-                messageBuilder.Append($"{portsToImport.Count} port başarıyla yüklendi.");
+                if (portsToImport.Any()) { messageBuilder.Append($"{portsToImport.Count} port başarıyla yüklendi."); }
                 if (skippedRows.Any())
                 {
-                    // \n karakterini <br> etiketine çevirerek HTML'de alt satıra geçmeyi sağlıyoruz
-                    string skippedRowsHtml = string.Join("<br>", skippedRows.Select(s => "- " + s));
-                    TempData["WarningMessage"] = $"{messageBuilder.ToString()} <hr><strong>Ancak {skippedRows.Count} satır şu sebeplerle atlandı:</strong><br>{skippedRowsHtml}";
+                    string skippedRowsHtml = string.Join("<br>", skippedRows.Select(s => "- " + System.Net.WebUtility.HtmlEncode(s)));
+                    if (portsToImport.Any()) { TempData["WarningMessage"] = $"{messageBuilder.ToString()} <hr><strong>Ancak, {skippedRows.Count} satır şu sebeplerle atlandı:</strong><br>{skippedRowsHtml}"; }
+                    else { TempData["ErrorMessage"] = $"Hiçbir port eklenemedi. <hr><strong>{skippedRows.Count} satırın tamamı şu sebeplerle atlandı:</strong><br>{skippedRowsHtml}"; }
                 }
-                else
-                {
-                    TempData["SuccessMessage"] = messageBuilder.ToString();
-                }
+                else if (portsToImport.Any()) { TempData["SuccessMessage"] = messageBuilder.ToString(); }
+                else { TempData["WarningMessage"] = "Excel dosyasında işlenecek geçerli veri bulunamadı."; }
             }
-            catch (Exception ex) { TempData["ErrorMessage"] = $"Veritabanına kayıt sırasında hata: {ex.InnerException?.Message ?? ex.Message}"; }
+            catch (Exception ex) { TempData["ErrorMessage"] = $"Veritabanına kayıt sırasında kritik bir hata oluştu: {ex.InnerException?.Message ?? ex.Message}"; }
+
             return RedirectToAction(nameof(ListAll));
         }
-
         private string GeneratePortDescription(PortDetay port, Server server)
         {
             string deviceName = server.HostDns ?? "UnknownServer";

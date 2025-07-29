@@ -129,11 +129,34 @@ namespace BelbimEnv.Controllers
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
-            var server = await _context.Servers.Include(s => s.PortDetaylari).FirstOrDefaultAsync(m => m.Id == id);
-            if (server == null) return NotFound();
-            return View(server);
-        }
 
+            // 1. Ana sunucuyu ve onun DIŞARI GİDEN portlarını çek.
+            var server = await _context.Servers
+                .Include(s => s.PortDetaylari)
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.Id == id);
+
+            if (server == null) return NotFound();
+
+            // 2. YENİ: Bu sunucuya GELEN bağlantıları bul.
+            // PortDetaylari tablosunda, SwName'i bu sunucunun HostDns'i olan tüm portları bul.
+            // Kaynak sunucu bilgisini de almak için Include(p => p.Server) ekliyoruz.
+            var inboundConnections = await _context.PortDetaylari
+                .Where(p => p.SwName == server.HostDns)
+                .Include(p => p.Server) // Kaynak sunucunun (bağlantının geldiği cihazın) bilgilerini de al
+                .AsNoTracking()
+                .ToListAsync();
+
+            // 3. İki bilgiyi de tek bir ViewModel içinde birleştir.
+            var viewModel = new ServerDetailsViewModel
+            {
+                Server = server,
+                InboundConnections = inboundConnections
+            };
+
+            // 4. ViewModel'i View'a gönder.
+            return View(viewModel);
+        }
         public async Task<IActionResult> Create()
         {
             // ===== BU BÖLÜM LOKASYON LİSTESİNİ SAYFAYA GÖNDERİR =====
