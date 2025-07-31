@@ -1,31 +1,26 @@
 using BelbimEnv.Data;
 using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 
+// 1. Builder Nesnesini Oluþturma
 var builder = WebApplication.CreateBuilder(args);
 
-// ==========================================================
-// ===         YENÝ EKLENEN KESTREL YAPILANDIRMASI        ===
-// ==========================================================
-// Sunucunun kabul edeceði maksimum request header boyutunu artýrýyoruz.
-// Varsayýlan 32768 byte (32 KB)'dýr. Biz bunu 65536 byte (64 KB) yapýyoruz.
+
+// 2. Servisleri Konfigüre Etme (Dependency Injection)
+
+// Kestrel Web Sunucusu Limitlerini Yapýlandýrma (HTTP 431 Hatasý Çözümü)
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
+    // Sunucunun kabul edeceði maksimum request header boyutunu 64 KB'a çýkar.
     serverOptions.Limits.MaxRequestHeadersTotalSize = 65536;
 });
-// ==========================================================
 
-
-// DbContext'i ve veritabaný baðlantýsýný servislere ekle
+// Veritabaný Baðlantýsýný (DbContext) Servislere Ekleme
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(connectionString));
 
-// Manuel Authentication Sistemi
+// Cookie Tabanlý Kimlik Doðrulama (Authentication) Servisini Ekleme
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -35,29 +30,38 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.SlidingExpiration = true;
     });
 
+// MVC Servislerini (Controllers ve Views) Ekleme
 builder.Services.AddControllersWithViews();
 
+
+// 3. Middleware Pipeline'ý Oluþturma
 var app = builder.Build();
 
+// Geliþtirme Ortamý Ayarlarý
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+    app.UseDeveloperExceptionPage(); // Detaylý hata sayfalarýný göster
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    app.UseExceptionHandler("/Home/Error"); // Genel hata yakalama sayfasý
+    app.UseHsts(); // Tarayýcýlarý HTTPS kullanmaya zorla
 }
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseRouting();
+// Temel Middleware'ler
+app.UseHttpsRedirection(); // HTTP isteklerini HTTPS'e yönlendir
+app.UseStaticFiles();      // wwwroot klasöründeki statik dosyalara (CSS, JS, resimler) eriþimi saðla
+app.UseRouting();          // Gelen isteðin hangi endpoint'e gideceðini belirle
 
-app.UseAuthentication();
-app.UseAuthorization();
+// Güvenlik Middleware'leri (Sýralama Önemli!)
+app.UseAuthentication();   // "Sen kimsin?" sorusunu sor (Cookie'yi kontrol et)
+app.UseAuthorization();    // "Buraya girmeye yetkin var mý?" sorusunu sor (Rolleri kontrol et)
 
+// Varsayýlan Rota (Endpoint) Yapýlandýrmasý
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+    pattern: "{controller=Account}/{action=Login}/{id?}"); // Baþlangýç sayfasý: /Account/Login
 
+
+// 4. Uygulamayý Çalýþtýrma
 app.Run();

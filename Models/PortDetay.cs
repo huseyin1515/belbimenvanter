@@ -1,8 +1,6 @@
-﻿// Models/PortDetay.cs
-
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Validation; // <<<--- BU USING SATIRINI EKLEYİN
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace BelbimEnv.Models
 {
@@ -16,7 +14,7 @@ namespace BelbimEnv.Models
         public int ServerId { get; set; }
 
         [ForeignKey("ServerId")]
-        [ValidateNever] // <<<--- SORUNU ÇÖZEN ATTRIBUTE BUDUR.
+        [ValidateNever]
         public virtual Server Server { get; set; } = null!;
 
         [Required(ErrorMessage = "Port tipi seçimi zorunludur.")]
@@ -64,5 +62,10 @@ namespace BelbimEnv.Models
 
         [Display(Name = "Açıklama (Otomatik)")]
         public string? Aciklama { get; set; }
+
+        // === YENİ EKLENEN ALAN ===
+        [Display(Name = "Açıklama (Manuel)")]
+        public string? Description { get; set; }
+        // =========================
     }
 }

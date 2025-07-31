@@ -3,87 +3,138 @@
 @using BelbimEnv.Helpers
 
 @{
-    ViewData["Title"] = "Toplu Port Ekle";
-    var linkSpeedOptions = new List<string> {  "1000", "1500", "2500", "3000", "4000", "5000", "10000", "25000", "40000", "100000" };
+    ViewData["Title"] = "Toplu Port Ekleme Sihirbazı";
+    var linkSpeedOptions = new List<string> { "10", "100", "1000", "2500", "10000", "25000", "40000", "100000" };
 }
-<h4><i class="fas fa-plus-circle text-success me-2"></i>@ViewData["Title"]</h4>
-<h6 class="text-muted">@Model.ServerName sunucusuna yeni portlar ekleniyor.</h6>
-<hr />
 
-<!-- Adet Belirleme Alanı -->
-<div class="row align-items-end g-3 mb-4 p-3 border-dashed rounded">
-    <div class="col-md-3">
-        <label for="portCount" class="form-label fw-bold">Kaç adet port eklenecek?</label>
-        <input type="number" id="portCount" class="form-control" value="1" min="1" max="50">
-    </div>
-    <div class="col-md-3">
-        <button type="button" id="generateRowsBtn" class="btn btn-info"><i class="fas fa-cogs me-1"></i>Satırları Oluştur</button>
+<!-- Sayfa Başlığı -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0 text-gray-800">@ViewData["Title"]</h1>
+        <p class="mb-0 text-muted"><strong>@Model.ServerName</strong> sunucusuna yeni portlar ekleniyor.</p>
     </div>
 </div>
 
+<!-- 1. Adım: Ön Bilgi Toplama Kartı -->
+<div class="card shadow mb-4">
+    <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary"><i class="fas fa-magic me-1"></i>Adım 1: Varsayılan Değerleri ve Adedi Girin</h6></div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3"><label for="defaultPortType" class="form-label">Varsayılan Port Tipi</label><select id="defaultPortType" class="form-select"><option value="" selected>Seçiniz...</option>@foreach (var value in Enum.GetValues(typeof(PortTipiEnum))) {
+            <option value="@((int)value)">@(((PortTipiEnum)value).GetDisplayName())</option>
+                        }
+</select></div>
+            <div class="col-md-3"><label for="defaultLinkSpeed" class="form-label">Varsayılan Link Hızı (Mbps)</label><select id="defaultLinkSpeed" class="form-select"><option value="">Seçiniz...</option>@foreach(var speed in linkSpeedOptions){
+            <option value="@speed">@speed</option>
+                        }
+</select></div>
+            <div class="col-md-3 autocomplete-container"><label for="defaultSwName" class="form-label">Varsayılan Switch/Cihaz Adı</label><input type="text" id="defaultSwName" class="form-control" autocomplete="off" /><div id="defaultSwAutocomplete" class="autocomplete-items"></div></div>
+            <div class="col-md-3"><label for="portCount" class="form-label">Kaç adet port eklenecek?</label><div class="input-group"><input type="number" id="portCount" class="form-control" value="1" min="1" max="50"><button type="button" id="generateRowsBtn" class="btn btn-info"><i class="fas fa-cogs me-1"></i>Satırları Oluştur</button></div></div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Adım: Ana Form -->
 <form asp-action="Create" method="post">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="ServerId" />
     <div id="port-rows-container"></div>
     <div id="save-button-container" class="form-group mt-4" style="display: none;">
-        <input type="submit" value="Tüm Portları Kaydet" class="btn btn-primary" />
-        <a asp-action="Manage" asp-route-id="@Model.ServerId" class="btn btn-outline-secondary">İptal</a>
+        <input type="submit" value="Tüm Portları Kaydet" class="btn btn-primary btn-lg" />
+        <a asp-controller="PortDetaylari" asp-action="Manage" asp-route-id="@Model.ServerId" class="btn btn-outline-secondary btn-lg">İptal</a>
     </div>
 </form>
-    <template id="port-row-template">
-        <div class="port-row card mb-3">
-            <div class="card-body">
-                <h6 class="card-title text-primary">Port #{ROW_NUMBER}</h6>
-                <div class="row g-3">
-                    <!-- ... (Port Tipi ve Dinamik Alanlar aynı) ... -->
-                    <hr class="my-2" />
-                    <!-- ORTAK ALANLAR -->
-                    <div class="col-md-3">
-                        <label class="form-label d-block">Link Durumu</label>
-                        <div class="btn-group link-status-group">
-                            <input type="hidden" name="Portlar[{INDEX}].LinkStatus" class="link-status-hidden-input" />
-                            <button type="button" class="btn btn-outline-success btn-sm status-btn" data-status="Up">Up</button>
-                            <button type="button" class="btn btn-outline-danger btn-sm status-btn" data-status="Down">Down</button>
-                        </div>
-                    </div>
 
-                    <div class="col-md-3">
-                        <label class="form-label">Link Hızı (Mbps)</label>
-                        <select name="Portlar[{INDEX}].LinkSpeed" class="form-select">
-                            <option value="">Seçiniz...</option>
-                            @foreach (var speed in linkSpeedOptions)
-                            {
-                                <option value="@speed">@speed</option>
-                            }
-                        </select>
-                    </div>
+<!-- Form Şablonu -->
+<template id="port-row-template">
+    <div class="port-row card shadow-sm mb-3">
+        <div class="card-body">
+            <h6 class="card-title text-primary border-bottom pb-2 mb-3">Port #{ROW_NUMBER}</h6>
+            <div class="row g-3">
+                <div class="col-md-12"><label class="form-label fw-bold">Port Tipi</label><select name="Portlar[{INDEX}].PortTipi" class="form-select port-type-selector" required><option value="" selected disabled>Lütfen bir port tipi seçin...</option>@foreach (var value in Enum.GetValues(typeof(PortTipiEnum))){
+                <option value="@((int)value)">@(((PortTipiEnum)value).GetDisplayName())</option>
+                                }
+</select></div>
 
-                    <div class="col-md-3 autocomplete-container"><label class="form-label">Switch/Cihaz Adı</label><input type="text" name="Portlar[{INDEX}].SwName" class="form-control sw-name-input" autocomplete="off" /><div class="autocomplete-items"></div></div>
-                    <div class="col-md-3"><label class="form-label">Switch Port</label><input type="text" name="Portlar[{INDEX}].SwPort" class="form-control" /></div>
-                </div>
+                <div class="col-md-3"><label class="form-label">NIC ID</label><input type="text" name="Portlar[{INDEX}].NicId" class="form-control" /></div>
+                <div class="col-md-3"><label class="form-label">Port ID</label><input type="text" name="Portlar[{INDEX}].PortId" class="form-control" /></div>
+
+                <div class="col-md-3 dynamic-field san-field" style="display:none;"><label class="form-label">WWPN</label><input type="text" name="Portlar[{INDEX}].Wwpn" class="form-control" /></div>
+                <div class="col-md-3 dynamic-field bakir-field" style="display:none;"><label class="form-label">Bakır MAC</label><input type="text" name="Portlar[{INDEX}].BakirMAC" class="form-control" /></div>
+                <div class="col-md-3 dynamic-field fiber-field" style="display:none;"><label class="form-label">Fiber MAC</label><input type="text" name="Portlar[{INDEX}].FiberMAC" class="form-control" /></div>
+
+                <div class="col-12"><hr class="my-2" /></div>
+
+                <div class="col-md-3"><label class="form-label">Link Durumu</label><div class="btn-group w-100 link-status-group"><input type="hidden" name="Portlar[{INDEX}].LinkStatus" class="link-status-hidden-input" /><button type="button" class="btn btn-outline-success status-btn w-50" data-status="Up">Up</button><button type="button" class="btn btn-outline-danger status-btn w-50" data-status="Down">Down</button></div></div>
+                <div class="col-md-3"><label class="form-label">Link Hızı (Mbps)</label><select name="Portlar[{INDEX}].LinkSpeed" class="form-select link-speed-selector"><option value="">Seçiniz...</option>@foreach(var speed in linkSpeedOptions){
+                <option value="@speed">@speed</option>
+                                }
+</select></div>
+                <div class="col-md-3 autocomplete-container"><label class="form-label">Switch/Cihaz Adı</label><input type="text" name="Portlar[{INDEX}].SwName" class="form-control sw-name-input" autocomplete="off" /><div class="autocomplete-items"></div></div>
+                <div class="col-md-3"><label class="form-label">Switch Port</label><input type="text" name="Portlar[{INDEX}].SwPort" class="form-control" /></div>
             </div>
         </div>
-    </template>
+    </div>
+</template>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
             const generateBtn = document.getElementById('generateRowsBtn');
             const container = document.getElementById('port-rows-container');
             const template = document.getElementById('port-row-template');
-            const portCountInput = document.getElementById('portCount');
             const saveButtonContainer = document.getElementById('save-button-container');
+            const body = document.querySelector('body');
 
-            // EKSİK OLAN SATIR OLUŞTURMA KODU
-            generateBtn.addEventListener('click', function() {
-                const count = parseInt(portCountInput.value, 10);
+            // =======================================================
+            // ===             YENİ VE GARANTİLİ YÖNTEM            ===
+            // =======================================================
+
+            // 1. Dinamik alanları yöneten TEK bir fonksiyon oluşturuyoruz.
+            function updateDynamicFields(rowElement) {
+                const selector = rowElement.querySelector('.port-type-selector');
+                if (!selector) return;
+
+                const selectedValue = selector.value;
+                rowElement.querySelectorAll('.dynamic-field').forEach(field => field.style.display = 'none');
+
+                if (selectedValue === '@((int)PortTipiEnum.FC)' || selectedValue === '@((int)PortTipiEnum.VirtualFC)') {
+                    rowElement.querySelector('.fiber-field').style.display = 'block';
+                } else if (selectedValue === '@((int)PortTipiEnum.Bakir)' || selectedValue === '@((int)PortTipiEnum.VirtualBakir)') {
+                    rowElement.querySelector('.bakir-field').style.display = 'block';
+                } else if (selectedValue === '@((int)PortTipiEnum.FiberForSAN)') {
+                    rowElement.querySelector('.san-field').style.display = 'block';
+                }
+            }
+
+            // 2. Satırları oluşturma butonu
+            generateBtn.addEventListener('click', function () {
+                const portCount = parseInt(document.getElementById('portCount').value, 10);
+                const defaultPortType = document.getElementById('defaultPortType').value;
+                const defaultLinkSpeed = document.getElementById('defaultLinkSpeed').value;
+                const defaultSwName = document.getElementById('defaultSwName').value;
+
                 container.innerHTML = '';
-                if (count > 0 && count <= 50) {
-                    for (let i = 0; i < count; i++) {
-                        const clone = template.content.cloneNode(true);
-                        let html = clone.firstElementChild.outerHTML;
-                        html = html.replace(/{INDEX}/g, i).replace(/{ROW_NUMBER}/g, i + 1);
+                if (portCount > 0 && portCount <= 50) {
+                    for (let i = 0; i < portCount; i++) {
+                        let html = template.innerHTML.replace(/{INDEX}/g, i).replace(/{ROW_NUMBER}/g, i + 1);
                         container.insertAdjacentHTML('beforeend', html);
+
+                        const newRow = container.lastElementChild;
+
+                        if (defaultPortType) {
+                            newRow.querySelector('.port-type-selector').value = defaultPortType;
+                        }
+                        if (defaultLinkSpeed) {
+                            newRow.querySelector('.link-speed-selector').value = defaultLinkSpeed;
+                        }
+                        if (defaultSwName) {
+                            newRow.querySelector('.sw-name-input').value = defaultSwName;
+                        }
+
+                        // ÖNEMLİ: Satır eklendikten sonra, o satır için fonksiyonu DOĞRUDAN çağır.
+                        updateDynamicFields(newRow);
                     }
                     saveButtonContainer.style.display = 'block';
                 } else {
@@ -91,24 +142,14 @@
                 }
             });
 
-            container.addEventListener('change', function(e) {
+            // 3. Kullanıcı manuel değişiklik yaptığında da aynı fonksiyonu çağır.
+            body.addEventListener('change', function (e) {
                 if (e.target.classList.contains('port-type-selector')) {
-                    const selectedValue = e.target.value;
-                    const parentRow = e.target.closest('.port-row');
-                    parentRow.querySelectorAll('.dynamic-field').forEach(field => field.style.display = 'none');
-                    if (selectedValue === '@((int)PortTipiEnum.FC)' || selectedValue === '@((int)PortTipiEnum.VirtualFC)') {
-                        parentRow.querySelector('.fiber-field').style.display = 'block';
-                        parentRow.querySelector('.fc-field').style.display = 'block';
-                    } else if (selectedValue === '@((int)PortTipiEnum.Bakir)' || selectedValue === '@((int)PortTipiEnum.VirtualBakir)') {
-                        parentRow.querySelectorAll('.bakir-field').forEach(f => f.style.display = 'block');
-                    } else if (selectedValue === '@((int)PortTipiEnum.FiberForSAN)') {
-                        parentRow.querySelector('.san-field').style.display = 'block';
-                    }
+                    updateDynamicFields(e.target.closest('.port-row'));
                 }
             });
-
-            container.addEventListener('click', function(e) {
-                if (e.target.classList.contains('status-btn')) {
+            body.addEventListener('click', function(e) {
+                 if (e.target.classList.contains('status-btn')) {
                     const button = e.target;
                     const group = button.closest('.link-status-group');
                     const hiddenInput = group.querySelector('.link-status-hidden-input');
@@ -127,11 +168,16 @@
                         button.classList.remove(newStatus === 'Up' ? 'btn-outline-success' : 'btn-outline-danger');
                         hiddenInput.value = newStatus;
                     }
-                }
+                 }
+                 document.querySelectorAll('.autocomplete-items').forEach(list => {
+                    if (e.target !== list && !e.target.classList.contains('sw-name-input')) {
+                        list.innerHTML = '';
+                    }
+                });
             });
 
-            container.addEventListener('input', function(e) {
-                if (e.target.classList.contains('sw-name-input')) {
+            body.addEventListener('input', function(e) {
+                if (e.target.matches('#defaultSwName, .sw-name-input')) {
                     const input = e.target;
                     const list = input.nextElementSibling;
                     const term = input.value;
@@ -143,7 +189,7 @@
                             data.forEach(item => {
                                 const div = document.createElement('div');
                                 div.innerHTML = item.replace(new RegExp(term, "gi"), (match) => `<strong>${match}</strong>`);
-                                div.addEventListener('click', function() {
+                                div.addEventListener('click', function () {
                                     input.value = item;
                                     list.innerHTML = '';
                                 });
@@ -152,20 +198,20 @@
                         });
                 }
             });
-
-            document.addEventListener("click", function (e) {
-                document.querySelectorAll('.autocomplete-items').forEach(list => {
-                    if (e.target !== list && !e.target.classList.contains('sw-name-input')) {
-                        list.innerHTML = '';
-                    }
-                });
-            });
         });
     </script>
 }
 
 @section Styles {
     <style>
+        body {
+            background-color: #f8f9fc;
+        }
+
+        .text-gray-800 {
+            color: #5a5c69 !important;
+        }
+
         .autocomplete-container {
             position: relative;
         }
@@ -173,8 +219,6 @@
         .autocomplete-items {
             position: absolute;
             border: 1px solid #d1d1d1;
-            border-bottom: none;
-            border-top: none;
             z-index: 99;
             top: 100%;
             left: 0;
@@ -193,9 +237,5 @@
                 .autocomplete-items div:hover {
                     background-color: #e9e9e9;
                 }
-
-            .autocomplete-items strong {
-                font-weight: 700;
-            }
     </style>
 }

@@ -147,25 +147,34 @@
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover" id="portTable">
+                <!-- ============================================== -->
+                <!-- ===        GÜNCELLENEN TABLO BAŞLIĞI       === -->
+                <!-- ============================================== -->
                 <thead>
                     <tr>
-                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["ServerSortParm"]">Ait Olduğu Sunucu <i class="fas fa-sort"></i></a></th>
-                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["PortTypeSortParm"]">Port Tipi <i class="fas fa-sort"></i></a></th>
+                        <th><a class="sort-link" asp-action="ListAll" asp-route-sortOrder="@ViewData["ServerSortParm"]">Kaynak Cihaz <i class="fas fa-sort"></i></a></th>
+                        <th>Port Tipi</th>
                         <th>MAC / WWPN</th>
-                        <th>Açıklama</th>
-                        <th>Link Durumu</th>
+                        <th>Hedef Cihaz</th>
+                        <th>Hedef Port</th>
+                        <th>Durum</th>
                         <th class="text-end">İşlemler</th>
                     </tr>
                 </thead>
+                <!-- ============================================== -->
+
                 <tbody id="portTableBody">
                     @if (!Model.Ports.Any())
                     {
-                        <tr><td colspan="6"><div class="text-center p-4"><i class="fas fa-info-circle fa-3x text-warning mb-3"></i><h5 class="text-muted">Sonuç Bulunamadı</h5><p>Mevcut kriterlere uygun port kaydı bulunmuyor.<br><a asp-action="ListAll">Filtreleri temizleyerek</a> yeniden deneyebilirsiniz.</p></div></td></tr>
+                        <tr><td colspan="7"><div class="text-center p-4"><i class="fas fa-info-circle fa-3x text-warning mb-3"></i><h5 class="text-muted">Sonuç Bulunamadı</h5><p>Mevcut kriterlere uygun port kaydı bulunmuyor.<br><a asp-action="ListAll">Filtreleri temizleyerek</a> yeniden deneyebilirsiniz.</p></div></td></tr>
                     }
                     else
                     {
                         @foreach (var port in Model.Ports)
                         {
+                            <!-- ============================================== -->
+                            <!-- ===         GÜNCELLENEN TABLO SATIRI       === -->
+                            <!-- ============================================== -->
                             <tr>
                                 <td><strong><a asp-controller="Servers" asp-action="Details" asp-route-id="@port.ServerId">@port.Server.HostDns</a></strong><small class="d-block text-muted">@port.Server.Location</small></td>
                                 <td><span class="badge bg-info text-dark">@port.PortTipi.GetDisplayName()</span></td>
@@ -185,7 +194,8 @@
                                         <span>@port.Wwpn</span>
                                     }
                                 </td>
-                                <td>@port.Aciklama</td>
+                                <td>@port.SwName</td>
+                                <td>@port.SwPort</td>
                                 <td>
                                     @if (port.LinkStatus?.ToLower() == "up")
                                     {
