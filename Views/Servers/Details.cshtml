@@ -27,7 +27,7 @@
             <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">Kimlik ve Model Bilgileri</h6></div>
             <div class="card-body">
                 <dl class="row mb-0">
-                    <dt class="col-sm-4">Sunucu ID</dt>
+                    <dt class="col-sm-4">ID</dt>
                     <dd class="col-sm-8">@Model.Server.Id</dd>
                     <dt class="col-sm-4">Host DNS</dt>
                     <dd class="col-sm-8">@Model.Server.HostDns</dd>
@@ -82,17 +82,31 @@
         {
             <div class="table-responsive">
                 <table class="table table-sm table-bordered">
-                    <thead class="table-light"><tr><th>Port Tipi</th><th>Açıklama</th><th>Hedef Cihaz (Switch)</th><th>Hedef Port</th><th>Durum</th><th class="text-center">İşlemler</th></tr></thead>
+                    <!-- GÜNCELLENDİ: Açıklama yerine MAC/WWPN -->
+                    <thead class="table-light"><tr><th>Port Tipi</th><th>MAC / WWPN</th><th>Hedef Cihaz (Switch)</th><th>Hedef Port</th><th>Durum</th><th class="text-center">İşlemler</th></tr></thead>
                     <tbody>
                         @foreach (var port in Model.Server.PortDetaylari.OrderBy(p => p.Id))
                         {
                             <tr>
                                 <td><span class="badge bg-secondary">@port.PortTipi.GetDisplayName()</span></td>
-                                <td>@port.Aciklama</td>
-                                <td>@port.SwName</td>
-                                <td>@port.SwPort</td>
+                                <!-- GÜNCELLENDİ: Açıklama yerine port tipine göre ilgili değeri yaz -->
                                 <td>
-                                    @if (port.LinkStatus?.ToLower() == "up")
+                                    <code>
+                                        @(port.PortTipi switch
+                                        {
+                                            PortTipiEnum.Bakir => port.BakirMAC,
+                                            PortTipiEnum.VirtualBakir => port.BakirMAC,
+                                            PortTipiEnum.FC => port.FiberMAC,
+                                            PortTipiEnum.VirtualFC => port.FiberMAC,
+                                            PortTipiEnum.FiberForSAN => port.Wwpn,
+                                            _ => ""
+                                        } ?? "-")
+                            </code>
+                        </td>
+                        <td>@port.SwName</td>
+                        <td>@port.SwPort</td>
+                        <td>
+                            @if (port.LinkStatus?.ToLower() == "up")
                                     {
                                         <span class="badge bg-success">Up</span>
                                     }
@@ -128,16 +142,30 @@
         {
             <div class="table-responsive">
                 <table class="table table-sm table-bordered">
-                    <thead class="table-light"><tr><th>Kaynak Cihaz</th><th>Kaynak Port Açıklaması</th><th>Bu Cihazdaki Port</th><th>Durum</th><th class="text-center">İşlemler</th></tr></thead>
+                    <!-- GÜNCELLENDİ: Açıklama yerine MAC/WWPN -->
+                    <thead class="table-light"><tr><th>Kaynak Cihaz</th><th>Kaynak MAC / WWPN</th><th>Bu Cihazdaki Port</th><th>Durum</th><th class="text-center">İşlemler</th></tr></thead>
                     <tbody>
                         @foreach (var inbound in Model.InboundConnections.OrderBy(p => p.Server.HostDns))
                         {
                             <tr>
                                 <td><strong><a asp-controller="Servers" asp-action="Details" asp-route-id="@inbound.ServerId">@inbound.Server.HostDns</a></strong></td>
-                                <td>@inbound.Aciklama</td>
-                                <td>@inbound.SwPort</td>
+                                <!-- GÜNCELLENDİ: Açıklama yerine port tipine göre ilgili değeri yaz -->
                                 <td>
-                                    @if (inbound.LinkStatus?.ToLower() == "up")
+                                    <code>
+                                        @(inbound.PortTipi switch
+                                        {
+                                            PortTipiEnum.Bakir => inbound.BakirMAC,
+                                            PortTipiEnum.VirtualBakir => inbound.BakirMAC,
+                                            PortTipiEnum.FC => inbound.FiberMAC,
+                                            PortTipiEnum.VirtualFC => inbound.FiberMAC,
+                                            PortTipiEnum.FiberForSAN => inbound.Wwpn,
+                                            _ => ""
+                                        } ?? "-")
+                            </code>
+                        </td>
+                        <td>@inbound.SwPort</td>
+                        <td>
+                            @if (inbound.LinkStatus?.ToLower() == "up")
                                     {
                                         <span class="badge bg-success">Up</span>
                                     }

@@ -116,18 +116,20 @@
         }
 </div></div></div>
 </div>
-
-<!-- 3. BÖLÜM: Sanal Makine Listesi Tablosu -->
 <div class="card shadow mb-4">
     <div class="card-header py-3"><h6 class="m-0 fw-bold text-primary">Sanal Makine Listesi (@Model.VirtualMachines.Count() sonuç)</h6></div>
     <div class="card-body">
         <div class="table-responsive">
             <table class="table table-hover grouped-table" id="vmTable">
-                <thead><tr><th>DNS</th><th>Durumu</th><th>VIP IP</th><th>Makine IP</th><th>Network</th><th>Host</th><th>Cluster</th><th class="text-end">İşlemler</th></tr></thead>
+                <!-- ============================================== -->
+                <!-- ===        GÜNCELLENEN TABLO BAŞLIĞI       === -->
+                <!-- ============================================== -->
+                <thead><tr><th>DNS</th><th>Durumu</th><th>VIP IP</th><th>Makine IP</th><th>Port</th><th>Network</th><th>Host</th><th>Cluster</th><th class="text-end">İşlemler</th></tr></thead>
+
                 <tbody id="vmTableBody">
                     @if (!Model.VirtualMachines.Any())
                     {
-                        <tr><td colspan="8"><div class="text-center p-4"><i class="fas fa-info-circle fa-3x text-warning mb-3"></i><h5 class="text-muted">Sonuç Bulunamadı</h5><p>Mevcut kriterlere uygun sanal makine kaydı bulunmuyor. <br /><a asp-action="Index">Filtreleri temizleyerek</a> yeniden deneyebilirsiniz.</p></div></td></tr>
+                        <tr><td colspan="9"><div class="text-center p-4"><i class="fas fa-info-circle fa-3x text-warning mb-3"></i><h5 class="text-muted">Sonuç Bulunamadı</h5><p>Mevcut kriterlere uygun sanal makine kaydı bulunmuyor. <br /><a asp-action="Index">Filtreleri temizleyerek</a> yeniden deneyebilirsiniz.</p></div></td></tr>
                     }
                     else
                     {
@@ -136,70 +138,60 @@
                             bool isFirstInGroup = previousVipIp != item.VipIp && !string.IsNullOrEmpty(item.VipIp);
                             previousVipIp = item.VipIp;
                             <tr class="@(isFirstInGroup ? "group-start" : "")">
-                                <td>
-                                    @if (!isFirstInGroup && !string.IsNullOrEmpty(item.VipIp))
-                                    {
-                                        <span class="sub-row-indicator"></span>
-                                    }
-                                    <strong>@item.Dns</strong><small class="d-block text-muted">@item.VmName</small>
-                                </td>
-                                <td>
-                                    @if (item.Status?.ToLower() == "poweredon")
-                                    {
-                                        <span class="badge bg-success">Açık</span>
-                                    }
-                                    else if (item.Status?.ToLower() == "poweredoff")
-                                    {
+                                <td>@if (!isFirstInGroup && !string.IsNullOrEmpty(item.VipIp)) {
+                                <span class="sub-row-indicator"></span>
+                            }
+    <strong>@item.Dns</strong><small class="d-block text-muted">@item.VmName</small></td>
+                            <td>@if(item.Status?.ToLower()=="poweredon"){
+                            <span class="badge bg-success">Açık</span>
+                        }else if (item.Status?.ToLower() == "poweredoff")
+                        {
 
-                                        <span class="badge bg-danger">Kapalı</span>
-                                    }
-                                    else
-                                    {
-
-                                        <span class="badge bg-secondary">@item.Status</span>
-                                    }
-                                </td>
-
-                                <!-- ======================================================= -->
-                                <!-- === DEĞİŞTİRİLEN BÖLÜM: VIP IP HER SATIRDA GÖRÜNECEK === -->
-                                <!-- ======================================================= -->
-                                <td>
-                                    @if (isFirstInGroup)
-                                    {
-                                        <strong class="text-primary">@item.VipIp</strong>
-                                    }
-                                    else
-                                    {
-                                        @item.VipIp
-                                    }
-                                </td>
-                                <!-- ======================================================= -->
-
-                                <td>@item.MachineIp</td>
-                                <td>@item.Network</td>
-                                <td>
-                                    @if (!string.IsNullOrEmpty(item.Host) && serverHostMap.ContainsKey(item.Host))
-                                    {
-                                        <a asp-controller="Servers" asp-action="Details" asp-route-id="@serverHostMap[item.Host]"><i class="fas fa-server me-1"></i>@item.Host</a>
-                                    }
-                                    else
-                                    {
-
-                                        @item.Host
-                                    }
-                                </td>
-                                <td>@item.Cluster</td>
-                                <td class="text-end text-nowrap">
-                                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Detaylar"><i class="fas fa-info-circle"></i></a>
-                                    @if (User.IsInRole("SuperUser"))
-                                    {
-                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
-                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu kaydı silmek istediğinizden emin misiniz?');"><button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button></form>
-                                    }
-                                </td>
-                            </tr>
+                            <span class="badge bg-danger">Kapalı</span>
                         }
-                    }
+                        else
+                        {
+
+                            <span class="badge bg-secondary">@item.Status</span>
+                        }
+</td>
+                        <td>@if(isFirstInGroup){
+                        <strong class="text-primary">@item.VipIp</strong>
+                                                }else
+                        {
+
+                            @item.VipIp
+                        }
+</td>
+
+                        <!-- ============================================== -->
+                        <!-- ===         GÜNCELLENEN TABLO SATIRI       === -->
+                        <!-- ============================================== -->
+                        <td>@item.MachineIp</td>
+                        <td>@item.Port</td> <!-- YENİ SÜTUN VERİSİ -->
+                        <td>@item.Network</td>
+                        <!-- ============================================== -->
+
+                        <td>@if(!string.IsNullOrEmpty(item.Host) && serverHostMap.ContainsKey(item.Host)){
+                        <a asp-controller="Servers" asp-action="Details" asp-route-id="@serverHostMap[item.Host]"><i class="fas fa-server me-1"></i>@item.Host</a>
+                                                }else
+                        {
+
+                            @item.Host
+                        }
+</td>
+                        <td>@item.Cluster</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info" title="Detaylar"><i class="fas fa-info-circle"></i></a>
+                            @if (User.IsInRole("SuperUser"))
+                            {
+                                <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-warning" title="Düzenle"><i class="fas fa-edit"></i></a>
+                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu kaydı silmek istediğinizden emin misiniz?');"><button type="submit" class="btn btn-sm btn-outline-danger" title="Sil"><i class="fas fa-trash-alt"></i></button></form>
+                            }
+                        </td>
+                    </tr>
+                                        }
+                                        }
                 </tbody>
             </table>
             <p id="noResultsMessage" class="text-center text-muted" style="display: none;">Arama kriterlerinize uygun sanal makine bulunamadı.</p>

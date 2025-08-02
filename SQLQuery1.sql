@@ -1,3 +1,3 @@
 SELECT *
 FROM PortDetaylari
-WHERE WWPN = '51:40:2e:c0:17:32:af:be';
+WHERE FiberMAC = 'e4:3d:1a:d3:ff:60';
